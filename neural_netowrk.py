@@ -57,3 +57,5 @@ model.compile(optimizer='adam', loss='mean_squared_error')
 print("Treinando a rede neural... isso pode levar um minuto.")
 history = model.fit(X_train, y_train, batch_size=32, epochs=20,
                     validation_data=(X_test, y_test), verbose=1)
+
+
