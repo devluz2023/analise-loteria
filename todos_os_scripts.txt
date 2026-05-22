@@ -1,0 +1,743 @@
+================================================================================
+ ARQUIVO: combinacoes.py
+ CAMINHO: ./combinacoes.py
+================================================================================
+
+import itertools
+
+# Isso NÃO carrega os 50 milhões na memória de uma vez
+combinacoes = itertools.combinations(range(1, 61), 6)
+
+# Para pegar uma combinação específica pelo índice,
+# o ideal é usar lógica matemática em vez de converter para lista.
+# Print the first 5 combinations
+print("First 5 combinations:")
+for i, combo in enumerate(combinacoes):
+    if i >= 5:
+        break
+    print(combo)
+
+================================================================================
+ ARQUIVO: frequencia.py
+ CAMINHO: ./frequencia.py
+================================================================================
+
+from itertools import combinations
+import pandas as pd
+from get_data import df_mega_sena
+
+# 1. Extrair os jogos de forma limpa
+colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+sorteios = {}
+
+print("Carregando e organizando os concursos...")
+for index, row in df_mega_sena.iterrows():
+    concurso = int(row['Concurso'])
+    # Guardamos os números como um 'set' (conjunto) para fazer interseção rápida depois
+    dezenas = set([int(row[c]) for c in colunas_bolas])
+    sorteios[concurso] = dezenas
+
+# Dicionários para guardar o mapeamento de quais concursos repetiram o quê
+# Chave: a combinação que repetiu | Valor: lista com os números dos concursos
+repeticoes = {6: {}, 5: {}, 4: {}, 3: {}, 2: {}}
+
+print("Analisando a interseção par a par entre todos os concursos... Isso pode levar alguns segundos.")
+
+lista_concursos = sorted(list(sorteios.keys()))
+total_concursos = len(lista_concursos)
+
+# 2. Comparar cada concurso com todos os seguintes (evita duplicar A vs B e B vs A)
+for i in range(total_concursos):
+    c1 = lista_concursos[i]
+    jogo1 = sorteios[c1]
+    
+    for j in range(i + 1, total_concursos):
+        c2 = lista_concursos[j]
+        jogo2 = sorteios[c2]
+        
+        # Encontra os números que aparecem nos dois jogos ao mesmo tempo
+        numeros_em_comum = jogo1 & jogo2
+        quantidade_comum = len(numeros_em_comum)
+        
+        # Se compartilham de 2 a 6 números, guardamos essa ocorrência de forma exclusiva
+        if 2 <= quantidade_comum <= 6:
+            # Transformamos em tupla ordenada para servir de chave única no dicionário
+            comb_comum = tuple(sorted(list(numeros_em_comum)))
+            
+            if comb_comum not in repeticoes[quantidade_comum]:
+                repeticoes[quantidade_comum][comb_comum] = set([c1, c2])
+            else:
+                repeticoes[quantidade_comum][comb_comum].add(c1)
+                repeticoes[quantidade_comum][comb_comum].add(c2)
+
+# 3. Exibir os Resultados Finais
+print("\n" + "=" * 60)
+print("ESTATÍSTICAS DE REPETIÇÃO EXCLUSIVA DE JOGOS")
+print("=" * 60)
+
+nomes = {6: "SENAS", 5: "QUINAS", 4: "QUADRAS", 3: "TERNOS", 2: "DUQUES"}
+
+for faixa in [6, 5, 4, 3, 2]:
+    total_combinacoes_distintas = len(repeticoes[faixa])
+    
+    print(f"\n▶ {nomes[faixa]} (Compartilhamento exato de {faixa} números):")
+    print(f"  Total de grupos de {faixa} números que já se repetiram: {total_combinacoes_distintas}")
+    
+    if total_combinacoes_distintas > 0:
+        # Criar um DataFrame temporário para ordenar e mostrar os exemplos mais frequentes
+        dados_faixa = []
+        for comb, concs in repeticoes[faixa].items():
+            dados_faixa.append({
+                'Combinação': comb,
+                'Vezes': len(concs),
+                'Concursos': sorted(list(concs))
+            })
+        
+        df_faixa = pd.DataFrame(dados_faixa).sort_values(by='Vezes', ascending=False)
+        print("  Top 3 combinações mais repetidas nessa faixa:")
+        print(df_faixa.head(3).to_string(index=False))
+    else:
+        print("  Nenhuma ocorrência registrada até hoje.")
+
+print("\n" + "=" * 60)
+
+================================================================================
+ ARQUIVO: gerador.py
+ CAMINHO: ./gerador.py
+================================================================================
+
+import random
+from itertools import combinations
+import pandas as pd
+from get_data import df_mega_sena
+from frequencia import repeticoes, sorteios
+from matriz_frequencia import gerar_matriz
+
+# === INICIALIZAÇÃO DA MATRIZ E FILTROS ===
+geteracao_matriz = gerar_matriz()  
+df_ausencia = pd.read_excel("matriz_ausencia_completa.xlsx")
+
+dezenas_quentes = set()
+dezenas_medias = set()
+dezenas_frias = set()
+
+for index, row in df_ausencia.iterrows():
+    dezena = int(row['Dezena'])
+    ausencia_atual = int(row['Ausencia_Actual_Concursos'])
+    if ausencia_atual <= 5:
+        dezenas_quentes.add(dezena)
+    elif 6 <= ausencia_atual <= 12:
+        dezenas_medias.add(dezena)
+    else:
+        dezenas_frias.add(dezena)
+
+total_concursos = len(df_mega_sena)
+probabilidades = {
+    6: 0.0,  
+    5: len(repeticoes[5]) / total_concursos,
+    4: len(repeticoes[4]) / total_concursos,
+    3: len(repeticoes[3]) / total_concursos,
+    2: len(repeticoes[2]) / total_concursos
+}
+
+senas_historicas = set(tuple(sorted(list(jogo))) for jogo in sorteios.values())
+quinas_historicas = set(repeticoes[5].keys())
+quadras_historicas = set(repeticoes[4].keys())
+ternos_historicas = set(repeticoes[3].keys())
+
+# === A FUNÇÃO QUE A LSTM VAI USAR PARA VALIDAR OS JOGOS ===
+def jogo_e_valido_estritamente(novo_jogo):
+    novo_jogo_tuple = tuple(novo_jogo)
+    
+    # 1. Filtro Térmico de Atrasos
+    qtd_quentes = sum(1 for num in novo_jogo if num in dezenas_quentes)
+    qtd_medias = sum(1 for num in novo_jogo if num in dezenas_medias)
+    qtd_frias = sum(1 for num in novo_jogo if num in dezenas_frias)
+            
+    if qtd_frias > 1 or qtd_quentes > 4 or qtd_quentes < 2:
+        return False 
+
+    # 2. Filtro de Repetição Estocástica (Sena, Quina, Quadra, Terno)
+    if novo_jogo_tuple in senas_historicas:
+        return False
+        
+    for quina in combinations(novo_jogo, 5):
+        if quina in quinas_historicas and random.random() > probabilidades[5]:
+            return False
+                
+    contagem_quadras = sum(1 for quadra in combinations(novo_jogo, 4) if quadra in quadras_historicas)
+    if contagem_quadras > 0 and random.random() > probabilidades[4]:
+        return False
+
+    contagem_ternos = sum(1 for terno in combinations(novo_jogo, 3) if terno in ternos_historicas)
+    if contagem_ternos < 1 or contagem_ternos > 3:
+        return False
+        
+    return True
+
+================================================================================
+ ARQUIVO: get_data.py
+ CAMINHO: ./get_data.py
+================================================================================
+
+import requests
+import pandas as pd
+import io
+
+# URL do arquivo Excel da Mega-Sena
+excel_url = "https://servicebus3.caixa.gov.br/portaldeloterias/api/resultados/download?modalidade=Mega-Sena"
+
+# Faz o download do arquivo
+response = requests.get(excel_url)
+response.raise_for_status()  # Levanta um erro para status HTTP ruins
+
+# Lê o conteúdo do arquivo em um DataFrame do pandas
+df_mega_sena = pd.read_excel(io.BytesIO(response.content))
+
+print("Arquivo Excel baixado e carregado no DataFrame 'df_mega_sena'.")
+# Exibe as primeiras 5 linhas do DataFrame para verificação
+print(df_mega_sena.head())
+
+================================================================================
+ ARQUIVO: indice.py
+ CAMINHO: ./indice.py
+================================================================================
+
+import pandas as pd
+from math import comb
+from get_data import df_mega_sena
+
+# 1. Identificar as colunas das dezenas (certifique-se que os nomes estão corretos no seu Excel)
+# Com base no seu comando, as colunas geralmente são 'Bola1', 'Bola2', etc.
+colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+
+def encontrar_posicao_itertools(linha):
+    """
+    Calcula a posição exata que uma combinação ocuparia no
+    gerador itertools.combinations(range(1, 61), 6)
+    """
+    # Extrair os números da linha e garantir que estão ordenados
+    dezenas = sorted([int(n) for n in linha[colunas_bolas]])
+
+    n = 60
+    k = 6
+    posicao = 0
+    valor_anterior = 1
+
+    for i, valor in enumerate(dezenas):
+        # Somamos as combinações que foram "puladas"
+        for v in range(valor_anterior, valor):
+            posicao += comb(n - v, k - 1 - i)
+        valor_anterior = valor + 1
+
+    return posicao + 1
+
+# 2. Criar a nova coluna no DataFrame
+print("Calculando o grupo/índice de cada sorteio...")
+df_mega_sena['Indice_Combinacao'] = df_mega_sena.apply(encontrar_posicao_itertools, axis=1)
+
+# 3. Exibir o resultado final com a nova coluna
+print(df_mega_sena[['Concurso', 'Indice_Combinacao'] + colunas_bolas].head())
+
+================================================================================
+ ARQUIVO: matriz_frequencia.py
+ CAMINHO: ./matriz_frequencia.py
+================================================================================
+
+import pandas as pd
+import numpy as np
+from collections import Counter
+from get_data import df_mega_sena
+
+def gerar_matriz():
+        
+    # 1. Configurações Iniciais
+    colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+    total_concursos = len(df_mega_sena)
+
+    print(f"Iniciando mapeamento estatístico sobre {total_concursos} concursos...")
+
+    # Dicionários para armazenar os históricos de jejuns
+    all_absence_streaks_per_dezena = {dezena: [] for dezena in range(1, 61)}
+    atraso_atual = {dezena: 0 for dezena in range(1, 61)}
+    max_consecutivo_sorteios = {dezena: 0 for dezena in range(1, 61)} # Vezes que saiu em concursos seguidos
+
+    # Auxiliar para contar saídas consecutivas
+    saiu_no_anterior = {dezena: False for dezena in range(1, 61)}
+    streak_consecutivo_atual = {dezena: 0 for dezena in range(1, 61)}
+
+    # Ordenar os concursos do primeiro ao último
+    df_cronologico = df_mega_sena.sort_values(by='Concurso').copy()
+
+    # 2. Varrer o histórico para coletar os tamanhos exatos de todos os jejuns
+    for index, row in df_cronologico.iterrows():
+        sorteados = set([int(row[c]) for c in colunas_bolas])
+        
+        for dezena in range(1, 61):
+            if dezena in sorteados:
+                # Se estava sem sair, fecha o ciclo de ausência e guarda o tamanho dele
+                if atraso_atual[dezena] > 0:
+                    all_absence_streaks_per_dezena[dezena].append(atraso_atual[dezena])
+                    atraso_atual[dezena] = 0
+                
+                # Controle de saídas consecutivas (saiu jogo seguido)
+                if saiu_no_anterior[dezena]:
+                    streak_consecutivo_atual[dezena] += 1
+                else:
+                    streak_consecutivo_atual[dezena] = 1
+                
+                if streak_consecutivo_atual[dezena] > max_consecutivo_sorteios[dezena]:
+                    max_consecutivo_sorteios[dezena] = streak_consecutivo_atual[dezena]
+                    
+                saiu_no_anterior[dezena] = True
+            else:
+                # Se não saiu, acumula o jejum atual
+                atraso_atual[dezena] += 1
+                streak_consecutivo_atual[dezena] = 0
+                saiu_no_anterior[dezena] = False
+
+    # Descobrir qual foi o maior jejum que aconteceu na história com qualquer dezena
+    max_observed_streak = 0
+    for dezena, streaks in all_absence_streaks_per_dezena.items():
+        if streaks:
+            max_observed_streak = max(max_observed_streak, max(streaks))
+
+    # 3. Construção das Colunas Estatísticas e de Resumo
+    rows_data = []
+
+    # Probabilidade teórica de uma dezena NÃO sair em 1 concurso: 54/60 = 0.90
+    prob_teorica_nao_sair = 54.0 / 60.0 
+
+    for dezena in range(1, 61):
+        streaks = all_absence_streaks_per_dezena[dezena]
+        streak_counts = Counter(streaks)
+        
+        # Contagens de sequências
+        total_sequences_any = len(streaks)
+        total_sequences_greater_1 = sum(1 for s in streaks if s > 1)
+        
+        total_absence_draws = sum(streaks)
+        average_streak_len = total_absence_draws / total_sequences_any if total_sequences_any > 0 else 0
+        
+        # Cálculos de Probabilidade Empírica (Baseada no Histórico Real)
+        # Total de vezes que a dezena NÃO saiu na história inteira dividido pelo total de concursos
+        vezes_nao_sorteada = total_concursos - df_mega_sena[colunas_bolas].isin([dezena]).any(axis=1).sum()
+        prob_nao_sair_1_concurso = vezes_nao_sorteada / total_concursos
+        prob_nao_sair_max_concursos = prob_nao_sair_1_concurso ** max_observed_streak
+        
+        # Frequência Média Esperada e Desvio Padrão Teórico
+        frequencia_media_esperada = total_concursos * (6.0 / 60.0) # Esperado de saídas = 10% dos concursos
+        saidas_reais = total_concursos - vezes_nao_sorteada
+        desvio_padrao_observado = saidas_reais - frequencia_media_esperada
+
+        # Monta a linha inicial com os cabeçalhos estatísticos idênticos ao seu modelo
+        row_entry = {
+            'Dezena': dezena,
+            'FrequenciaMedia_Esperada': round(frequencia_media_esperada, 1),
+            'Desvio': round(desvio_padrao_observado, 1),
+            'Prob_Nao_Sair_Empirica_1_Concurso': round(prob_nao_sair_1_concurso, 4),
+            f'Prob_Nao_Sair_Empirica_{max_observed_streak}_Concursos': f"{prob_nao_sair_max_concursos:.6e}",
+            'Máximo Consecutivo': max_consecutivo_sorteios[dezena],
+            'Total de Sequências (qualquer tamanho)': total_sequences_any,
+            'Total de Sequências (> 1)': total_sequences_greater_1,
+            'Máximo de Sorteios Sem Sair': max(streaks) if streaks else 0,
+            'Ausencia_Actual_Concursos': atraso_atual[dezena]
+        }
+        
+        # Preenche a contagem de vezes para cada tamanho de jejum (Coluna 1 até o Máximo Histórico)
+        for streak_len in range(1, max_observed_streak + 1):
+            row_entry[str(streak_len)] = streak_counts.get(streak_len, 0)
+            
+        # Colunas finais de consolidação
+        row_entry['Total_Streaks_Observed'] = total_sequences_any
+        row_entry['Total_Absence_Draws'] = total_absence_draws
+        row_entry['Average_Streak_Length'] = round(average_streak_len, 4)
+        
+        rows_data.append(row_entry)
+
+    # 4. Organizar Ordem das Colunas na Tabela Final
+    colunas_estatisticas = [
+        'Dezena', 'FrequenciaMedia_Esperada', 'Desvio', 
+        'Prob_Nao_Sair_Empirica_1_Concurso', f'Prob_Nao_Sair_Empirica_{max_observed_streak}_Concursos',
+        'Máximo Consecutivo', 'Total de Sequências (qualquer tamanho)', 'Total de Sequências (> 1)', 
+        'Máximo de Sorteios Sem Sair', 'Ausencia_Actual_Concursos'
+    ]
+    colunas_dinamicas_jejum = [str(i) for i in range(1, max_observed_streak + 1)]
+    colunas_resumo_finais = ['Total_Streaks_Observed', 'Total_Absence_Draws', 'Average_Streak_Length']
+
+    colunas_finais_ordenadas = colunas_estatisticas + colunas_dinamicas_jejum + colunas_resumo_finais
+
+    # Criar DataFrame estruturado
+    df_matriz_completa = pd.DataFrame(rows_data, columns=colunas_finais_ordenadas)
+
+    # 5. Salvar em Excel para você analisar perfeitamente sem quebras de linha
+    nome_arquivo = "matriz_ausencia_completa.xlsx"
+    df_matriz_completa.to_excel(nome_arquivo, index=False)
+
+    print("\n" + "=" * 70)
+    print("     MATRIZ DE AUSÊNCIA E ESTATÍSTICA CALCULADA COM SUCESSO!")
+    print("=" * 70)
+    print(f"Maior jejum detectado na história dos sorteios: {max_observed_streak} concursos.")
+    print(f"Arquivo gerado: '{nome_arquivo}'")
+    print("Abra esse arquivo no Excel ou Sheets para ver a tabela inteira perfeitamente.")
+    print("=" * 70)
+
+    # Mostrar uma prévia pequena no terminal para validação
+    print("\nPrévia das primeiras dezenas (apenas cabeçalhos principais):")
+    print(df_matriz_completa[['Dezena', 'Desvio', 'Máximo de Sorteios Sem Sair', 'Ausencia_Actual_Concursos', '1', '2', '3', 'Average_Streak_Length']].head(4))
+
+================================================================================
+ ARQUIVO: media.py
+ CAMINHO: ./media.py
+================================================================================
+
+from collections import Counter
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from get_data import df_mega_sena
+
+# Lista para armazenar todas as dezenas sorteadas
+todas_dezenas = []
+
+# Iterar sobre cada linha do DataFrame e coletar as dezenas
+for index, row in df_mega_sena.iterrows():
+    for col in colunas_bolas: # 'colunas_bolas' foi definida anteriormente e contém ['Bola1', ..., 'Bola6']
+        todas_dezenas.append(row[col])
+
+# Contar a frequência de cada dezena
+frequencia_dezenas = Counter(todas_dezenas)
+
+# Converter para um DataFrame para facilitar a visualização e ordenação
+df_frequencia = pd.DataFrame(frequencia_dezenas.items(), columns=['Dezena', 'Frequencia'])
+
+# Ordenar por dezena para uma visualização clara ou por frequência
+df_frequencia = df_frequencia.sort_values(by='Dezena').reset_index(drop=True)
+
+# Obter o número total de sorteios do DataFrame principal
+total_sorteios = len(df_mega_sena)
+
+# Calcular a média esperada de vezes que cada dezena deveria ter saído
+media_esperada = total_sorteios / 10
+
+print(f"Total de sorteios analisados: {total_sorteios}")
+print(f"Média esperada de ocorrências por dezena (total_sorteios / 10): {media_esperada:.2f}")
+
+# Adicionar a média esperada ao DataFrame de frequência (para referência)
+df_frequencia['Media_Esperada'] = media_esperada
+
+# Calcular o desvio: Frequencia Real - Média Esperada
+df_frequencia['Desvio'] = df_frequencia['Frequencia'] - df_frequencia['Media_Esperada']
+
+print("\nFrequência, Média Esperada e Desvio por Dezena:")
+display(df_frequencia.head(10))
+
+
+
+================================================================================
+ ARQUIVO: neural_netowrk.py
+ CAMINHO: ./neural_netowrk.py
+================================================================================
+
+import numpy as np
+import pandas as pd
+import random
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
+from get_data import df_mega_sena
+
+# === IMPORTAÇÕES DA SUA LÓGICA OFICIAL ===
+from gerador import jogo_e_valido_estritamente
+from indice import encontrar_posicao_itertools
+
+# =============================================================
+# 1. PREPARAÇÃO DOS DADOS HISTÓRICOS (SÉRIES TEMPORAIS)
+# =============================================================
+print("Preparando dados de séries temporais para validação e treino...")
+colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+df_cronologico = df_mega_sena.sort_values(by='Concurso').copy()
+
+historico_atrasos = []
+gabarito_sorteios = [] 
+atraso_atual = {d: 0 for d in range(1, 61)}
+
+for index, row in df_cronologico.iterrows():
+    sorteados = set([int(row[c]) for c in colunas_bolas])
+    historico_atrasos.append([atraso_atual[d] for d in range(1, 61)])
+    gabarito_sorteios.append(sorteados)
+    
+    for d in range(1, 61):
+        if d in sorteados:
+            atraso_atual[d] = 0
+        else:
+            atraso_atual[d] += 1
+
+matriz_atrasos = np.array(historico_atrasos)
+scaler = MinMaxScaler(feature_range=(0, 1))
+dados_norm = scaler.fit_transform(matriz_atrasos)
+
+window_size = 10
+total_amostras = len(dados_norm) - window_size
+train_size = int(total_amostras * 0.8)
+
+# Criar janelas para treino e teste
+X_all, y_all = [], []
+for i in range(len(dados_norm) - window_size):
+    X_all.append(dados_norm[i:(i + window_size), :])
+    y_all.append(dados_norm[i + window_size, :])
+
+X_train, X_test = np.array(X_all[:train_size]), np.array(X_all[train_size:])
+y_train, y_test = np.array(y_all[:train_size]), np.array(y_all[train_size:])
+gabarito_teste = gabarito_sorteios[window_size + train_size:]
+
+# =============================================================
+# 2. TREINAMENTO DA REDE NEURAL (LSTM MULTIVARIÁVEL)
+# =============================================================
+model = Sequential([
+    LSTM(128, return_sequences=True, input_shape=(window_size, 60)),
+    Dropout(0.2),
+    LSTM(64, return_sequences=False),
+    Dropout(0.2),
+    Dense(64, activation='relu'),
+    Dense(60, activation='sigmoid')
+])
+model.compile(optimizer='adam', loss='mean_squared_error')
+
+print("Treinando a rede neural LSTM... Por favor, aguarde.")
+model.fit(X_train, y_train, batch_size=32, epochs=25, verbose=0)
+
+
+# =============================================================
+# 3. AVALIAÇÃO DE ACURÁCIA (BACKTESTING NO HISTÓRICO DE TESTE)
+# =============================================================
+print("\nAvaliando acurácia histórica nos dados de teste...")
+previsoes_test_norm = model.predict(X_test, verbose=0)
+previsoes_test_reais = scaler.inverse_transform(previsoes_test_norm)
+
+total_quadras_ganhas = 0
+total_quinas_ganhas = 0
+total_senas_ganhas = 0
+concursos_para_avaliar = min(50, len(X_test))
+
+# Testa nos últimos 50 concursos para medir a eficiência real do modelo
+for i in range(len(X_test) - concursos_para_avaliar, len(X_test)):
+    previsao_concurso = previsoes_test_reais[i]
+    resultado_real = gabarito_teste[i]
+    
+    probabilidades = []
+    for idx, atr_prev in enumerate(previsao_concurso):
+        score = 1 / (1 + atr_prev)
+        probabilidades.append((idx + 1, score))
+        
+    dezenas_sugeridas = sorted(probabilidades, key=lambda x: x[1], reverse=True)
+    top_20_ia = [item[0] for item in dezenas_sugeridas[:20]]
+    
+    # Simula a geração de 5 jogos para aquele concurso passado
+    jogos_simulados = []
+    while len(jogos_simulados) < 5:
+        palpite = sorted(random.sample(top_20_ia, 6))
+        if jogo_e_valido_estritamente(palpite):
+            jogos_simulados.append(palpite)
+            
+    for jogo in jogos_simulados:
+        acertos = len(set(jogo) & resultado_real)
+        if acertos == 6: total_senas_ganhas += 1
+        elif acertos == 5: total_quinas_ganhas += 1
+        elif acertos == 4: total_quadras_ganhas += 1
+
+print("-" * 75)
+print(f"MÉTRICAS DE ACURÁCIA (Últimos {concursos_para_avaliar} Concursos Testados):")
+print(f"▶ Quadras premiadas na simulação: {total_quadras_ganhas}")
+print(f"▶ Quinas premiadas na simulação:  {total_quinas_ganhas}")
+print(f"▶ Senas premiadas na simulação:   {total_senas_ganhas}")
+print("-" * 75)
+
+
+# =============================================================
+# 4. INTELIGÊNCIA PREDITIVA PARA O PRÓXIMO CONCURSO
+# =============================================================
+print("\nGerando previsões térmicas para o PRÓXIMO concurso...")
+ultima_janela = dados_norm[-window_size:]
+ultima_janela_reshape = np.reshape(ultima_janela, (1, window_size, 60))
+
+previsao_futura_norm = model.predict(ultima_janela_reshape, verbose=0)
+previsao_futura_reais = scaler.inverse_transform(previsao_futura_norm)[0]
+
+probabilidades_futuras = []
+for idx, atraso_previsto in enumerate(previsao_futura_reais):
+    score_proximidade_zero = 1 / (1 + atraso_previsto) 
+    probabilidades_futuras.append((idx + 1, score_proximidade_zero))
+
+dezenas_sugeridas_futuras = sorted(probabilidades_futuras, key=lambda x: x[1], reverse=True)
+top_20_atual_ia = [item[0] for item in dezenas_sugeridas_futuras[:20]]
+
+print(f"-> Universo reduzido pela IA (TOP 20): {sorted(top_20_atual_ia)}")
+
+
+# =============================================================
+# 5. GERAÇÃO DOS 5 JOGOS DEFINITIVOS COM VALIDAÇÃO E ÍNDICES
+# =============================================================
+print("\nA IA está montando as combinações e validando no seu gerador...")
+N_JOGOS = 5
+jogos_finais_concurso = []
+tentativas_da_rede = 0
+
+while len(jogos_finais_concurso) < N_JOGOS:
+    tentativas_da_rede += 1
+    # IA seleciona 6 dezenas dentro do seu TOP 20 predito
+    palpite_ia = sorted(random.sample(top_20_atual_ia, 6))
+    
+    # Submete à validação estrita do seu gerador.py
+    if jogo_e_valido_estritamente(palpite_ia):
+        jogos_finais_concurso.append(palpite_ia)
+
+# Exibição do Volante Final
+print("\n" + "=" * 75)
+print("        JOGOS GERADOS EXCLUSIVAMENTE PELA REDE NEURAL LSTM")
+print("=" * 75)
+print(f"Combinações geradas pela IA até passarem nos filtros da lógica: {tentativas_da_rede}")
+print("-" * 75)
+
+for i, jogo in enumerate(jogos_finais_concurso, 1):
+    jogo_formatado = ", ".join(f"{num:02d}" for num in jogo)
+    
+    # Prepara o formato Series do Pandas para o seu 'indice.py' processar
+    linha_pandas = pd.Series(
+        data=jogo, 
+        index=['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+    )
+    
+    # Calcula o índice
+    indice_calculado = encontrar_posicao_itertools(linha_pandas)
+    indice_br = f"{indice_calculado:,}".replace(",", ".")
+    
+    print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice: {indice_br}")
+
+print("=" * 75)
+print("Processo concluído com sucesso! Boa sorte!")
+print("=" * 75)
+
+================================================================================
+ ARQUIVO: resultado.py
+ CAMINHO: ./resultado.py
+================================================================================
+
+from math import comb
+import numpy as np
+from neural_netowrk import model, scaler, window_size
+from indice import df_mega_sena
+
+# =============================================================
+# 1. PREPARAÇÃO DOS DADOS DA ENTRADA RECENTE
+# =============================================================
+
+# Pegar os últimos 'window_size' (10) concursos do DataFrame original
+ultimos_10_indices = df_mega_sena['Indice_Combinacao'].tail(window_size).values.reshape(-1, 1)
+
+# Normalizar esses dados com o mesmo scaler usado no treino
+ultimos_10_norm = scaler.transform(ultimos_10_indices)
+
+# Preparar o formato para a Rede Neural (1 amostra, 10 janelas, 1 recurso)
+entrada_predict = np.reshape(ultimos_10_norm, (1, window_size, 1))
+
+
+# =============================================================
+# 2. REALIZAR A PREVISÃO DO PRÓXIMO CONCURSO
+# =============================================================
+
+predicao_norm = model.predict(entrada_predict)
+
+# Desnormalizar para obter o Índice de 1 a 50M
+indice_previsto = int(scaler.inverse_transform(predicao_norm)[0][0])
+
+
+# =============================================================
+# 3. FUNÇÃO CORRIGIDA PARA CONVERTER ÍNDICE EM 6 NÚMEROS
+# =============================================================
+
+def indice_para_combinacao(index, n=60, k=6):
+    """
+    Converte um índice (base 1) de volta para os 6 números da Mega-Sena.
+    Garante que o índice esteja dentro do limite antes de começar.
+    """
+    total_combinacoes = comb(n, k)
+    
+    # Proteção de limites contra pequenas variações numéricas da rede
+    if index < 1:
+        index = 1
+    elif index > total_combinacoes:
+        index = total_combinacoes
+
+    combinacao = []
+    current = 1
+    
+    for i in range(k):
+        elementos_restantes = k - 1 - i
+        
+        while current <= n:
+            c = comb(n - current, elementos_restantes)
+            
+            if index <= c:
+                combinacao.append(current)
+                current += 1  # O próximo número precisa ser maior que o atual
+                break
+            
+            index -= c
+            current += 1
+            
+    return combinacao
+
+
+# Converter o índice previsto em jogo real
+jogo_previsto = indice_para_combinacao(indice_previsto)
+
+print("\n" + "-" * 50)
+print(f"PREVISÃO DA REDE LSTM PARA O PRÓXIMO CONCURSO ({df_mega_sena['Concurso'].max() + 1})")
+print(f"Índice Previsto pela Rede: {indice_previsto:,}")
+print(f"Números Sugeridos: {jogo_previsto}")
+print("-" * 50)
+
+
+# =============================================================
+# 4. CÁLCULO DA ACURÁCIA HISTÓRICA DO MODELO
+# =============================================================
+
+print("\nCalculando a acurácia histórica do modelo nos dados existentes...")
+
+# Preparar todos os dados históricos para a validação
+dados_totais = df_mega_sena['Indice_Combinacao'].values.reshape(-1, 1)
+dados_totais_norm = scaler.transform(dados_totais)
+
+# Criar as janelas estruturadas de 10 em 10 para todo o histórico
+X_historico = []
+for i in range(len(dados_totais_norm) - window_size):
+    X_historico.append(dados_totais_norm[i:(i + window_size), 0])
+
+X_historico = np.array(X_historico)
+X_historico = np.reshape(X_historico, (X_historico.shape[0], X_historico.shape[1], 1))
+
+# Rodar a previsão da rede para o histórico inteiro (sem poluir o terminal)
+previsoes_historicas_norm = model.predict(X_historico, verbose=0)
+
+# Desnormalizar os resultados da rede e coletar os gabaritos reais do histórico
+previsoes_historicas = scaler.inverse_transform(previsoes_historicas_norm)
+valores_reais_historicos = df_mega_sena['Indice_Combinacao'].values[window_size:].reshape(-1, 1)
+
+# Calcular o erro absoluto de cada concurso passado
+erros_absolutos = np.abs(valores_reais_historicos - previsoes_historicas)
+
+# Definir a margem de tolerância (Sem k= para evitar TypeError no Python 3.13)
+total_combinacoes = comb(60, 6)               # 50.063.860 combinações possíveis
+margem_tolerancia = total_combinacoes * 0.05  # Tolerância de 5% (~2.5 milhões de posições)
+
+# Calcular a porcentagem de acertos que ficaram dentro do raio aceitável
+acertos = np.sum(erros_absolutos <= margem_tolerancia)
+acuracia_historica = (acertos / len(valores_reais_historicos)) * 100
+
+print("-" * 50)
+print(f"MÉTRICA DE DESEMPENHO (Histórico Geral)")
+print(f"Margem de erro aceitável: {margem_tolerancia:,.0f} posições.")
+print(f"Acurácia Histórica do Modelo: {acuracia_historica:.2f}%")
+print("-" * 50)
+
