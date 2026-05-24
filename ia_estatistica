@@ -1,0 +1,39 @@
+# 1. Pegar os últimos 'window_size' concursos do DataFrame original
+ultimos_10_indices = df_mega_sena['Indice_Combinacao'].tail(window_size).values.reshape(-1, 1)
+
+# 2. Normalizar esses dados com o mesmo scaler usado no treino
+ultimos_10_norm = scaler.transform(ultimos_10_indices)
+
+# 3. Preparar o formato para a Rede Neural (1 amostra, 10 janelas, 1 recurso)
+entrada_predict = np.reshape(ultimos_10_norm, (1, window_size, 1))
+
+# 4. Realizar a Previsão
+predicao_norm = model.predict(entrada_predict)
+
+# 5. Desnormalizar para obter o Índice de 1 a 50M
+indice_previsto = int(scaler.inverse_transform(predicao_norm)[0][0])
+
+# --- FUNÇÃO PARA CONVERTER ÍNDICE EM 6 NÚMEROS ---
+def indice_para_combinacao(index, n=60, k=6):
+    """Converte um índice (1-50.063.860) de volta para os 6 números"""
+    combinacao = []
+    current = 1
+    for i in range(k):
+        while True:
+            c = comb(n - current, k - 1 - i)
+            if index <= c:
+                combinacao.append(current)
+                break
+            index -= c
+            current += 1
+        current += 1
+    return combinacao
+
+# 6. Resultado Final
+jogo_previsto = indice_para_combinacao(indice_previsto)
+
+print("-" * 40)
+print(f"PREVISÃO PARA O CONCURSO {df_mega_sena['Concurso'].max() + 1}")
+print(f"Índice Previsto pela Rede: {indice_previsto:,}")
+print(f"Números Sugeridos: {jogo_previsto}")
+print("-" * 40)

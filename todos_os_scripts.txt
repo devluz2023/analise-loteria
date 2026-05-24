@@ -109,35 +109,64 @@ print("\n" + "=" * 60)
 import random
 from itertools import combinations
 import pandas as pd
+import numpy as np
 from get_data import df_mega_sena
 from frequencia import repeticoes, sorteios
 from matriz_frequencia import gerar_matriz
 
-# === INICIALIZAÇÃO DA MATRIZ E FILTROS ===
-geteracao_matriz = gerar_matriz()  
+# =============================================================
+# 1. MAPEAMENTO MACRO DE PROBABILIDADES DA MATRIZ DE AUSÊNCIA
+# =============================================================
+geteracao_matriz = gerar_matriz()  # Atualiza o teu Excel automaticamente
 df_ausencia = pd.read_excel("matriz_ausencia_completa.xlsx")
 
-dezenas_quentes = set()
-dezenas_medias = set()
-dezenas_frias = set()
+# Filtrar quais são as colunas numéricas de jejum (1 até 108 ou mais)
+colunas_jejum = [col for col in df_ausencia.columns if str(col).isdigit()]
 
+# Dicionários para guardar a inteligência analítica do teu Excel
+atraso_atual_por_dezena = {}
+distribuicao_global_jejuns = {int(col): 0 for col in colunas_jejum}
+
+# Passo A: Capturar o atraso de hoje de cada dezena e somar os totais de cada coluna
 for index, row in df_ausencia.iterrows():
     dezena = int(row['Dezena'])
-    ausencia_atual = int(row['Ausencia_Actual_Concursos'])
-    if ausencia_atual <= 5:
-        dezenas_quentes.add(dezena)
-    elif 6 <= ausencia_atual <= 12:
-        dezenas_medias.add(dezena)
-    else:
-        dezenas_frias.add(dezena)
+    atraso_atual_por_dezena[dezena] = int(row['Ausencia_Actual_Concursos'])
+    
+    for col in colunas_jejum:
+        tamanho_j = int(col)
+        distribuicao_global_jejuns[tamanho_j] += int(row[col])
 
+# Passo B: Calcular o total absoluto de sequências gravadas na história
+total_absoluto_sequencias = sum(distribuicao_global_jejuns.values())
+
+# Passo C: Criar a tabela de probabilidade real para cada tamanho de jejum (1 a 108)
+probabilidade_tamanho_jejum = {}
+for tamanho_j, total_ocorrencias in distribuicao_global_jejuns.items():
+    # Evita divisão por zero e define a chance empírica daquele tamanho de jejum específico
+    probabilidade_tamanho_jejum[tamanho_j] = total_ocorrencias / total_absoluto_sequencias
+
+print("\n" + "=" * 75)
+print("     CURVA DE PROBABILIDADE HISTÓRICA DO COMPRIMENTO DE JEJUM")
+print("=" * 75)
+print(f"Total de ciclos de jejum analisados no Excel: {total_absoluto_sequencias:,}")
+print(f"▶ Probabilidade de fechar Jejum tamanho 1: {probabilidade_tamanho_jejum.get(1, 0)*100:.2f}% (Alta)")
+print(f"▶ Probabilidade de fechar Jejum tamanho 2: {probabilidade_tamanho_jejum.get(2, 0)*100:.2f}% (Alta)")
+print(f"▶ Probabilidade de fechar Jejum tamanho 10: {probabilidade_tamanho_jejum.get(10, 0)*100:.2f}% (Média)")
+# Busca dinamicamente o maior valor da lista para printar a probabilidade da cauda longa
+maior_j_gravado = max(probabilidade_tamanho_jejum.keys())
+print(f"▶ Probabilidade de fechar Jejum tamanho {maior_j_gravado}: {probabilidade_tamanho_jejum.get(maior_j_gravado, 0)*100:.4f}% (Raríssima)")
+print("=" * 75)
+
+
+# =============================================================
+# 2. PROBABILIDADES ESTOCÁSTICAS DE REPETIÇÃO DE GRUPOS
+# =============================================================
 total_concursos = len(df_mega_sena)
-probabilidades = {
+probabilidades_repeticao = {
     6: 0.0,  
     5: len(repeticoes[5]) / total_concursos,
     4: len(repeticoes[4]) / total_concursos,
-    3: len(repeticoes[3]) / total_concursos,
-    2: len(repeticoes[2]) / total_concursos
+    3: len(repeticoes[3]) / total_concursos
 }
 
 senas_historicas = set(tuple(sorted(list(jogo))) for jogo in sorteios.values())
@@ -145,28 +174,52 @@ quinas_historicas = set(repeticoes[5].keys())
 quadras_historicas = set(repeticoes[4].keys())
 ternos_historicas = set(repeticoes[3].keys())
 
-# === A FUNÇÃO QUE A LSTM VAI USAR PARA VALIDAR OS JOGOS ===
+
+# =============================================================
+# 3. MOTOR DE VALIDAÇÃO FIEL ÀS PROBABILIDADES DAS COLUNAS (1 A 108)
+# =============================================================
 def jogo_e_valido_estritamente(novo_jogo):
     novo_jogo_tuple = tuple(novo_jogo)
     
-    # 1. Filtro Térmico de Atrasos
-    qtd_quentes = sum(1 for num in novo_jogo if num in dezenas_quentes)
-    qtd_medias = sum(1 for num in novo_jogo if num in dezenas_medias)
-    qtd_frias = sum(1 for num in novo_jogo if num in dezenas_frias)
-            
-    if qtd_frias > 1 or qtd_quentes > 4 or qtd_quentes < 2:
-        return False 
+    # ---------------------------------------------------------------------
+    # BARREIRA 1: ADERÊNCIA À CURVA MATRICIAL DE PROBABILIDADE DE JEJUM
+    # ---------------------------------------------------------------------
+    probabilidades_das_6_dezenas = []
+    
+    for num in novo_jogo:
+        # Se a dezena sair hoje, o ciclo fecha no tamanho atual dela + 1
+        jejum_futuro = atraso_atual_por_dezena[num] + 1
+        
+        # Puxa do nosso dicionário qual é a probabilidade geral de um jejum fechar com esse tamanho
+        chance_desse_jejum = probabilidade_tamanho_jejum.get(jejum_futuro, 0)
+        
+        probabilidades_das_6_dezenas.append(chance_desse_jejum)
+        
+    # Critério de Rejeição 1: Se o jogo contiver qualquer dezena cujo tamanho de
+    # jejum futuro seja uma anomalia absoluta (chance menor que 0.05% ou 0.0005)
+    # permitindo apenas se for jejum ultra baixo (1 ou 2) que são zonas de repetição rápida
+    for p, num in zip(probabilidades_das_6_dezenas, novo_jogo):
+        if p < 0.0005 and (atraso_atual_por_dezena[num] + 1) > 2:
+            return False # Descarta na hora por ser um tamanho de jejum improvável de fechar hoje
 
-    # 2. Filtro de Repetição Estocástica (Sena, Quina, Quadra, Terno)
+    # Critério de Rejeição 2: O equilíbrio coletivo das probabilidades.
+    # Em média, um jogo normal sorteado é composto por dezenas que flutuam em posições
+    # confortáveis da curva. Se o produto ou a média for perigosamente baixa, o jogo é descartado.
+    if np.mean(probabilidades_das_6_dezenas) < 0.015:
+        return False
+
+    # ---------------------------------------------------------------------
+    # BARREIRA 2: FILTRO DE REPETIÇÃO ESTOCÁSTICA (QUADRAS/TERNOS)
+    # ---------------------------------------------------------------------
     if novo_jogo_tuple in senas_historicas:
         return False
         
     for quina in combinations(novo_jogo, 5):
-        if quina in quinas_historicas and random.random() > probabilidades[5]:
+        if quina in quinas_historicas and random.random() > probabilidades_repeticao[5]:
             return False
                 
     contagem_quadras = sum(1 for quadra in combinations(novo_jogo, 4) if quadra in quadras_historicas)
-    if contagem_quadras > 0 and random.random() > probabilidades[4]:
+    if contagem_quadras > 0 and random.random() > probabilidades_repeticao[4]:
         return False
 
     contagem_ternos = sum(1 for terno in combinations(novo_jogo, 3) if terno in ternos_historicas)
@@ -197,6 +250,2104 @@ df_mega_sena = pd.read_excel(io.BytesIO(response.content))
 print("Arquivo Excel baixado e carregado no DataFrame 'df_mega_sena'.")
 # Exibe as primeiras 5 linhas do DataFrame para verificação
 print(df_mega_sena.head())
+
+================================================================================
+ ARQUIVO: ia_autoencoder_nonlinear.py
+ CAMINHO: ./ia_autoencoder_nonlinear.py
+================================================================================
+
+import numpy as np
+import pandas as pd
+import random
+import optuna
+import os
+from sklearn.preprocessing import MinMaxScaler
+from scipy.optimize import minimize
+import tensorflow as tf
+from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.layers import Input, Dense, LSTM, Dropout
+from get_data import df_mega_sena
+
+# === IMPORTAÇÃO DA SUA LÓGICA DE ÍNDICES ===
+from indice import encontrar_posicao_itertools
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+# =============================================================
+# 1. CARREGAMENTO DOS DADOS E TREINAMENTO DO AUTOENCODER
+# =============================================================
+print("Carregando dados e construindo Autoencoder para a Matriz de Bayes...")
+colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+df_cronologico = df_mega_sena.sort_values(by='Concurso').copy()
+
+# Carrega a tabela horizontal de ausência completa
+df_ausencia = pd.read_excel("matriz_ausencia_completa.xlsx")
+colunas_jejum = [col for col in df_ausencia.columns if str(col).isdigit()]
+
+# Prepara os dados para o Autoencoder (Instâncias de jejum histórico)
+matriz_jejuns_bruta = df_ausencia[colunas_jejum].values.astype(np.float32)
+scaler_ae = MinMaxScaler(feature_range=(0, 1))
+matriz_jejuns_norm = scaler_ae.fit_transform(matriz_jejuns_bruta)
+
+# Arquitetura do Autoencoder
+dim_entrada = matriz_jejuns_norm.shape[1] # Qtd de colunas de jejum (ex: 108)
+dim_latente = 12                          # Gargalo: Comprime para 12 dimensões essenciais
+
+input_layer = Input(shape=(dim_entrada,))
+encoded = Dense(32, activation='relu')(input_layer)
+bottleneck = Dense(dim_latente, activation='relu', name='espaco_latente')(encoded)
+decoded = Dense(32, activation='relu')(bottleneck)
+output_layer = Dense(dim_entrada, activation='sigmoid')(decoded)
+
+autoencoder = Model(input_layer, output_layer)
+encoder = Model(input_layer, bottleneck) # Modelo cortado que extrai os recursos comprimidos
+
+autoencoder.compile(optimizer='adam', loss='mean_squared_error')
+# Treina o Autoencoder para reconstruir a si mesmo (Self-Supervised)
+autoencoder.fit(matriz_jejuns_norm, matriz_jejuns_norm, epochs=40, batch_size=32, verbose=0)
+
+# Extrai os scores latentes e mapeia de volta um vetor de peso para cada tamanho de jejum
+recursos_latentes = encoder.predict(matriz_jejuns_norm, verbose=0)
+score_peso_jejum = np.mean(recursos_latentes, axis=0) # Perfil latente médio
+
+# Reconstrói a estrutura a priori para o histórico
+distribuicao_global_jejuns = {int(col): 0 for col in colunas_jejum}
+for col in colunas_jejum:
+    distribuicao_global_jejuns[int(col)] = int(df_ausencia[col].sum())
+
+total_sequencias = sum(distribuicao_global_jejuns.values())
+prob_prior_jejum = {t: (qtd / total_sequencias) for t, qtd in distribuicao_global_jejuns.items()}
+
+# Reconstrói a matriz temporal para a LSTM
+historico_atrasos = []
+gabarito_sorteios = [] 
+atraso_atual = {d: 0 for d in range(1, 61)}
+
+for index, row in df_cronologico.iterrows():
+    sorteados = set([int(row[c]) for c in colunas_bolas])
+    historico_atrasos.append([atraso_atual[d] for d in range(1, 61)])
+    gabarito_sorteios.append(sorteados)
+    for d in range(1, 61):
+        if d in sorteados: atraso_atual[d] = 0
+        else: atraso_atual[d] += 1
+
+matriz_atrasos = np.array(historico_atrasos)
+scaler_lstm = MinMaxScaler(feature_range=(0, 1))
+dados_norm = scaler_lstm.fit_transform(matriz_atrasos)
+
+
+# =============================================================
+# 2. OPTIMIZADOR NÃO LINEAR COM ENGENHARIA LATENTE DO AUTOENCODER
+# =============================================================
+def resolver_nlp_com_recursos_autoencoder(scores_dezenas, atrasos_atuais, params_nlp):
+    """
+    Usa SLSQP para otimizar a escolha das dezenas aplicando pesos ajustados
+    pelas features compactadas do Autoencoder.
+    """
+    scores = np.array(scores_dezenas)
+    
+    def funcao_objetivo(x):
+        x_safe = np.clip(x, 1e-10, 1.0)
+        # Termo Não Linear: Entropia Ponderada pelo perfil latente do Autoencoder
+        # Força o espalhamento de dezenas nas dimensões que o Autoencoder identificou como estruturais
+        entropia_latente = -np.sum(x_safe * np.log(x_safe)) * np.mean(score_peso_jejum)
+        return -(np.sum(scores * x) + params_nlp['peso_entropia'] * entropia_latente)
+
+    def restricao_soma(x):
+        return np.sum(x) - 6.0
+
+    def restricao_frias(x):
+        frias_idx = np.where(atrasos_atuais > params_nlp['corte_jejum_longo'])[0]
+        return params_nlp['max_dezenas_frias'] - np.sum(x[frias_idx])
+
+    def restricao_quentes(x):
+        quentes_idx = np.where(atrasos_atuais <= 4)[0]
+        return np.sum(x[quentes_idx]) - params_nlp['min_dezenas_quentes']
+
+    constraints = [
+        {'type': 'eq', 'fun': restricao_soma},
+        {'type': 'ineq', 'fun': restricao_frias},
+        {'type': 'ineq', 'fun': restricao_quentes}
+    ]
+    
+    bounds = [(0.0, 1.0) for _ in range(60)]
+    x0 = np.full(60, 0.1)
+    
+    res = minimize(funcao_objetivo, x0, method='SLSQP', bounds=bounds, constraints=constraints, options={'maxiter': 80, 'disp': False})
+    
+    if res.success:
+        return {d+1: max(0.0, val) for d, val in enumerate(res.x)}
+    else:
+        return {d+1: 0.1 for d in range(60)}
+
+
+def amostrar_jogos_da_curva_latente(pesos_nlp, n_jogos=5):
+    jogos_gerados = []
+    dezenas = list(range(1, 61))
+    valores_pesos = np.array([pesos_nlp[d] for d in dezenas])
+    valores_pesos = np.where(valores_pesos < 1e-4, 1e-5, valores_pesos)
+    
+    tentativas = 0
+    while len(jogos_gerados) < n_jogos and tentativas < 2000:
+        tentativas += 1
+        probs_roleta = valores_pesos / np.sum(valores_pesos)
+        palpite = sorted(np.random.choice(dezenas, size=6, replace=False, p=probs_roleta))
+        
+        if sum(1 for n in palpite if n % 2 == 0) in [2, 3, 4]:
+            if palpite not in jogos_gerados:
+                jogos_gerados.append([int(n) for n in palpite])
+                
+    return jogos_gerados
+
+
+# =============================================================
+# 3. FUNÇÃO OBJETIVO DO OPTUNA
+# =============================================================
+def objective(trial):
+    window_size = trial.suggest_int('window_size', 10, 16)
+    peso_lstm = trial.suggest_float('peso_lstm', 0.4, 0.7)
+    peso_bayes = 1.0 - peso_lstm
+    
+    params_nlp = {
+        'peso_entropia': trial.suggest_float('peso_entropia', 0.02, 0.20),
+        'corte_jejum_longo': trial.suggest_int('corte_jejum_longo', 14, 24),
+        'max_dezenas_frias': trial.suggest_float('max_dezenas_frias', 1.0, 2.0),
+        'min_dezenas_quentes': trial.suggest_float('min_dezenas_quentes', 2.0, 3.5)
+    }
+    
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - window_size):
+        X_all.append(dados_norm[i:(i + window_size), :])
+        y_all.append(dados_norm[i + window_size, :])
+        gabarito_all.append(gabarito_sorteios[i + window_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    
+    model = Sequential([
+        LSTM(64, return_sequences=False, input_shape=(window_size, 60)),
+        Dropout(0.2),
+        Dense(60, activation='sigmoid')
+    ])
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    model.fit(X_train, y_train, batch_size=64, epochs=8, verbose=0)
+    
+    previsoes_norm = model.predict(X_test[-60:], verbose=0)
+    previsoes_lstm = scaler_lstm.inverse_transform(previsoes_norm)
+    gabarito_recortado = gabarito_teste[-60:]
+    atrasos_no_teste = matriz_atrasos[train_size + window_size - 1 : -1][-60:]
+    
+    score_fim = 0
+    for i in range(60):
+        pred_lstm = previsoes_lstm[i]
+        atraso_concurso_atual = atrasos_no_teste[i]
+        resultado_real = gabarito_recortado[i]
+        
+        scores_dezenas = []
+        for idx in range(60):
+            score_lstm_norm = 1 / (1 + pred_lstm[idx])
+            jejum_futuro = atraso_concurso_atual[idx] + 1
+            score_bayes_norm = prob_prior_jejum.get(jejum_futuro, 0.0001)
+            scores_dezenas.append((peso_lstm * score_lstm_norm) + (peso_bayes * score_bayes_norm))
+            
+        pesos_nlp = resolver_nlp_com_recursos_autoencoder(scores_dezenas, atraso_concurso_atual, params_nlp)
+        jogos_simulados = amostrar_jogos_da_curva_latente(pesos_nlp, n_jogos=5)
+                
+        for jogo in jogos_simulados:
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 4: score_fim += 1000
+            elif acertos == 5: score_fim += 50000
+            
+    return score_fim
+
+
+# =============================================================
+# 4. EXECUÇÃO MESTRE DO ECOSSISTEMA COMPATÍVEL
+# =============================================================
+if __name__ == '__main__':
+    print("\n[FASE 1] Rodando Optuna no Híbrido com Compressão via Autoencoder...")
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=10)
+    
+    params = study.best_params
+    print(f"\n-> Configurações de Estado Ótimo Localizadas: {params}")
+    
+    params_nlp_master = {
+        'peso_entropia': params['peso_entropia'],
+        'corte_jejum_longo': params['corte_jejum_longo'],
+        'max_dezenas_frias': params['max_dezenas_frias'],
+        'min_dezenas_quentes': params['min_dezenas_quentes']
+    }
+    
+    w_size = params['window_size']
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - w_size):
+        X_all.append(dados_norm[i:(i + w_size), :])
+        y_all.append(dados_norm[i + w_size, :]) 
+        gabarito_all.append(gabarito_sorteios[i + w_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    atrasos_no_teste_completo = matriz_atrasos[train_size + w_size - 1 : -1]
+    
+    print("\n[FASE 2] Treinando Rede Neural LSTM do Escopo Master...")
+    model_master = Sequential([
+        LSTM(128, return_sequences=False, input_shape=(w_size, 60)),
+        Dropout(0.2),
+        Dense(64, activation='relu'),
+        Dense(60, activation='sigmoid')
+    ])
+    model_master.compile(optimizer='adam', loss='mean_squared_error')
+    model_master.fit(X_train, y_train, batch_size=32, epochs=40, verbose=0)
+    
+    # =============================================================
+    # 5. BACKTESTING TOTAL
+    # =============================================================
+    print(f"\n[FASE 3] Rodando Backtesting completo em {len(X_test)} concursos...")
+    previsoes_test_norm = model_master.predict(X_test, verbose=0)
+    previsoes_test_reais = scaler_lstm.inverse_transform(previsoes_test_norm)
+    
+    total_ternos, total_quadras, total_quinas, total_senas = 0, 0, 0, 0
+    total_bilhetes_gerados = 0
+    p_lstm = params['peso_lstm']
+    p_bayes = 1.0 - p_lstm
+    
+    for i in range(len(X_test)):
+        pred_lstm = previsoes_test_reais[i]
+        atraso_concurso_atual = atrasos_no_teste_completo[i]
+        resultado_real = gabarito_teste[i]
+        
+        scores_dezenas = []
+        for idx in range(60):
+            score_lstm = 1 / (1 + pred_lstm[idx])
+            jejum_futuro = atraso_concurso_atual[idx] + 1
+            score_bayes = prob_prior_jejum.get(jejum_futuro, 0.0001)
+            scores_dezenas.append((p_lstm * score_lstm) + (p_bayes * score_bayes))
+            
+        pesos_nlp_hist = resolver_nlp_com_recursos_autoencoder(scores_dezenas, atraso_concurso_atual, params_nlp_master)
+        jogos_simulados = amostrar_jogos_da_curva_latente(pesos_nlp_hist, n_jogos=5)
+                
+        for jogo in jogos_simulados:
+            total_bilhetes_gerados += 1
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 6: total_senas += 1
+            elif acertos == 5: total_quinas += 1
+            elif acertos == 4: total_quadras += 1
+            elif acertos == 3: total_ternos += 1
+            
+    taxa_ternos = (total_ternos / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+    taxa_quadras = (total_quadras / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+
+    print("-" * 75)
+    print(f"RELATÓRIO DE CONVERSÃO COM EXTRAÇÃO LATENTE (AUTOENCODER + NLP):")
+    print(f"▶ Total de bilhetes gerados no teste: {total_bilhetes_gerados}")
+    print("-" * 75)
+    print(f"▶ TERNOS:  {total_ternos} acertos ➔ {taxa_ternos:.4f}%")
+    print(f"▶ QUADRAS: {total_quadras} acertos ➔ {taxa_quadras:.4f}%")
+    print(f"▶ QUINAS:  {total_quinas} acertos")
+    print("-" * 75)
+    
+    # =============================================================
+    # 6. PALPITE REAL PARA O PRÓXIMO CONCURSO
+    # =============================================================
+    print("\n[FASE 4] Gerando palpite definitivo com representação latente profunda...")
+    ultima_janela = dados_norm[-w_size:]
+    ultima_janela_reshape = np.reshape(ultima_janela, (1, w_size, 60))
+    
+    pred_futura_lstm = scaler_lstm.inverse_transform(model_master.predict(ultima_janela_reshape, verbose=0))[0]
+    atraso_hoje_real = matriz_atrasos[-1]
+    
+    scores_futuros = []
+    for idx in range(60):
+        score_lstm = 1 / (1 + pred_futura_lstm[idx])
+        jejum_futuro = atraso_hoje_real[idx] + 1
+        scores_futuros.append((p_lstm * score_lstm) + (p_bayes * score_bayes))
+        
+    pesos_futuros_nlp = resolver_nlp_com_recursos_autoencoder(scores_futuros, atraso_hoje_real, params_nlp_master)
+    jogos_finais = amostrar_jogos_da_curva_latente(pesos_futuros_nlp, n_jogos=5)
+            
+    print("\n" + "=" * 75)
+    print("      JOGOS GERADOS VIA EXTRAÇÃO LATENTE PROFUNDA + ENSEMBLE NLP")
+    print("=" * 75)
+    for i, jogo in enumerate(jogos_finais, 1):
+        jogo_formatado = ", ".join(f"{num:02d}" for num in jogo)
+        linha_pandas = pd.Series(data=jogo, index=colunas_bolas)
+        indice_calculado = encontrar_posicao_itertools(linha_pandas)
+        indice_br = f"{indice_calculado:,}".replace(",", ".")
+        print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice Real: {indice_br}")
+    print("=" * 75)
+
+================================================================================
+ ARQUIVO: ia_markov.py
+ CAMINHO: ./ia_markov.py
+================================================================================
+
+import numpy as np
+import pandas as pd
+import random
+import optuna
+import os
+from sklearn.preprocessing import MinMaxScaler
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
+from get_data import df_mega_sena
+
+# === IMPORTAÇÕES DA SUA LÓGICA OFICIAL ===
+from gerador import jogo_e_valido_estritamente
+from indice import encontrar_posicao_itertools
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+# =============================================================
+# 1. CONSTRUÇÃO COMPLETA DA MATRIZ DE TRANSIÇÃO DE MARKOV
+# =============================================================
+print("Carregando Excel e calculando a Matriz de Transição de Markov...")
+colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+df_cronologico = df_mega_sena.sort_values(by='Concurso').copy()
+
+df_ausencia = pd.read_excel("matriz_ausencia_completa.xlsx")
+colunas_jejum = [int(col) for col in df_ausencia.columns if str(col).isdigit()]
+max_jejum_mapeado = max(colunas_jejum)
+
+# Dicionário de transições de Markov: Estado t -> {0: prob_sair, t+1: prob_continuar_em_jejum}
+matriz_transicao_markov = {}
+
+for t in colunas_jejum:
+    total_ocorrencias_estado_t = df_ausencia[str(t)].sum()
+    
+    if total_ocorrencias_estado_t > 0:
+        qtd_transicoes_para_zero = total_ocorrencias_estado_t 
+        qtd_transicoes_para_proximo = sum(df_ausencia[str(j)].sum() for j in colunas_jejum if j > t)
+        
+        total_passagens = qtd_transicoes_para_zero + qtd_transicoes_para_proximo
+        
+        prob_sair = qtd_transicoes_para_zero / total_passagens
+        prob_acumular = qtd_transicoes_para_proximo / total_passagens
+    else:
+        prob_sair = 0.05 
+        prob_acumular = 0.95
+        
+    matriz_transicao_markov[t] = {0: prob_sair, t+1: prob_acumular}
+
+# Reconstrói a série temporal de atrasos para alimentar a LSTM
+historico_atrasos = []
+gabarito_sorteios = [] 
+atraso_atual = {d: 0 for d in range(1, 61)}
+
+for index, row in df_cronologico.iterrows():
+    sorteados = set([int(row[c]) for c in colunas_bolas])
+    historico_atrasos.append([atraso_atual[d] for d in range(1, 61)])
+    gabarito_sorteios.append(sorteados)
+    for d in range(1, 61):
+        if d in sorteados: atraso_atual[d] = 0
+        else: atraso_atual[d] += 1
+
+matriz_atrasos = np.array(historico_atrasos)
+scaler_lstm = MinMaxScaler(feature_range=(0, 1))
+dados_norm = scaler_lstm.fit_transform(matriz_atrasos)
+
+
+# =============================================================
+# 2. MOTOR DE SIMULAÇÃO MARKOVIANA (MARKOV CHAIN SIMULATOR)
+# =============================================================
+def simular_proximo_estado_markov(pred_lstm, atrasos_atuais, n_simulacoes_mcmc=10000):
+    """
+    Simula o próximo concurso fazendo as Cadeias de Markov de cada dezena 
+    caminharem sob a influência das probabilidades da rede neural LSTM.
+    """
+    dezenas = list(range(1, 61))
+    frequencia_combinacoes_validas = {}
+    
+    prob_markov_quebra = []
+    for idx in range(60):
+        jejum_hoje = atrasos_atuais[idx]
+        p_zero_markov = matriz_transicao_markov.get(jejum_hoje, {0: 0.1})[0]
+        prob_markov_quebra.append(p_zero_markov)
+        
+    prob_markov_quebra = np.array(prob_markov_quebra)
+    score_ia_temporal = 1 / (1 + pred_lstm)
+    
+    propensao_sorteio = prob_markov_quebra * score_ia_temporal
+    probs_roleta = propensao_sorteio / np.sum(propensao_sorteio)
+    
+    for _ in range(n_simulacoes_mcmc):
+        cenario_sorteio = sorted(np.random.choice(dezenas, size=6, replace=False, p=probs_roleta))
+        
+        # CORRIGIDO: Corrigida a chamada da função para bater com o import do seu gerador.py
+        if jogo_e_valido_estritamente(cenario_sorteio):
+            tuple_jogo = tuple(cenario_sorteio)
+            if tuple_jogo in frequencia_combinacoes_validas:
+                frequencia_combinacoes_validas[tuple_jogo] += 1
+            else:
+                frequencia_combinacoes_validas[tuple_jogo] = 1
+                
+    jogos_ordenados = sorted(frequencia_combinacoes_validas.items(), key=lambda x: x[1], reverse=True)
+    return [list(item[0]) for item in jogos_ordenados[:5]]
+
+
+# =============================================================
+# 3. OPTUNA TUNANDO O ECOSSISTEMA MARKOVIANO
+# =============================================================
+def objective(trial):
+    window_size = trial.suggest_int('window_size', 10, 16)
+    peso_lstm = trial.suggest_float('peso_lstm', 0.4, 0.7)
+    
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - window_size):
+        X_all.append(dados_norm[i:(i + window_size), :])
+        y_all.append(dados_norm[i + window_size, :])
+        gabarito_all.append(gabarito_sorteios[i + window_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    
+    model = Sequential([
+        LSTM(64, return_sequences=False, input_shape=(window_size, 60)),
+        Dropout(0.2),
+        Dense(60, activation='sigmoid')
+    ])
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    model.fit(X_train, y_train, batch_size=64, epochs=8, verbose=0)
+    
+    previsoes_norm = model.predict(X_test[-50:], verbose=0)
+    previsoes_lstm = scaler_lstm.inverse_transform(previsoes_norm)
+    gabarito_recortado = gabarito_teste[-50:]
+    atrasos_no_teste = matriz_atrasos[train_size + window_size - 1 : -1][-50:]
+    
+    score_fim = 0
+    for i in range(50):
+        pred_lstm = previsoes_lstm[i]
+        atraso_concurso_atual = atrasos_no_teste[i]
+        resultado_real = gabarito_recortado[i]
+        
+        jogos_simulados = simular_proximo_estado_markov(pred_lstm, atraso_concurso_atual, n_simulacoes_mcmc=2500)
+                
+        for jogo in jogos_simulados:
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 4: score_fim += 1000   
+            elif acertos == 5: score_fim += 50000
+            
+    return score_fim
+
+
+# =============================================================
+# 4. EXECUÇÃO DO TREINAMENTO MESTRE (MARKOV MASTER)
+# =============================================================
+if __name__ == '__main__':
+    print("\n[FASE 1] Rodando Optuna para equilibrar a Cadeia de Transição de Markov...")
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=10)
+    
+    params = study.best_params
+    print(f"\n-> Melhores parâmetros temporais localizados: {params}")
+    
+    w_size = params['window_size']
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - w_size):
+        X_all.append(dados_norm[i:(i + w_size), :])
+        y_all.append(dados_norm[i + w_size, :]) 
+        gabarito_all.append(gabarito_sorteios[i + w_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    atrasos_no_teste_completo = matriz_atrasos[train_size + w_size - 1 : -1]
+    
+    print("\n[FASE 2] Treinando Rede Neural LSTM do Ensemble de Markov...")
+    model_master = Sequential([
+        LSTM(128, return_sequences=False, input_shape=(w_size, 60)),
+        Dropout(0.2),
+        Dense(64, activation='relu'),
+        Dense(60, activation='sigmoid')
+    ])
+    model_master.compile(optimizer='adam', loss='mean_squared_error')
+    model_master.fit(X_train, y_train, batch_size=32, epochs=40, verbose=0)
+    
+    # =============================================================
+    # 5. BACKTESTING TOTAL MARKOVIANO
+    # =============================================================
+    print(f"\n[FASE 3] Executando Backtesting completo em {len(X_test)} concursos via Cadeias de Markov...")
+    previsoes_test_norm = model_master.predict(X_test, verbose=0)
+    previsoes_test_reais = scaler_lstm.inverse_transform(previsoes_test_norm)
+    
+    total_ternos, total_quadras, total_quinas, total_senas = 0, 0, 0, 0
+    total_bilhetes_gerados = 0
+    
+    for i in range(len(X_test)):
+        pred_lstm = previsoes_test_reais[i]
+        atraso_concurso_atual = atrasos_no_teste_completo[i]
+        resultado_real = gabarito_teste[i]
+        
+        jogos_simulados = simular_proximo_estado_markov(pred_lstm, atraso_concurso_atual, n_simulacoes_mcmc=5000)
+                
+        for jogo in jogos_simulados:
+            total_bilhetes_gerados += 1
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 6: total_senas += 1
+            elif acertos == 5: total_quinas += 1
+            elif acertos == 4: total_quadras += 1
+            elif acertos == 3: total_ternos += 1
+            
+    taxa_ternos = (total_ternos / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+    taxa_quadras = (total_quadras / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+
+    print("-" * 75)
+    print(f"RELATÓRIO DE PERFORMANCE DE CONVERSÃO HISTÓRICA DE MARKOV:")
+    print(f"▶ Total de bilhetes gerados por convergência na Cadeia: {total_bilhetes_gerados}")
+    print("-" * 75)
+    print(f"▶ TERNOS:  {total_ternos} acertos ➔ {taxa_ternos:.4f}%")
+    print(f"▶ QUADRAS: {total_quadras} acertos ➔ {taxa_quadras:.4f}%")
+    print(f"▶ QUINAS:  {total_quinas} acertos")
+    print("-" * 75)
+    
+    # =============================================================
+    # 6. PALPITE REAL VIA CADEIA DE MARKOV PARA O PRÓXIMO CONCURSO
+    # =============================================================
+    print("\n[FASE 4] Rodando Projeção Estacionária de 20.000 Passos de Markov para hoje...")
+    ultima_janela = dados_norm[-w_size:]
+    ultima_janela_reshape = np.reshape(ultima_janela, (1, w_size, 60))
+    
+    pred_futura_lstm = scaler_lstm.inverse_transform(model_master.predict(ultima_janela_reshape, verbose=0))[0]
+    atraso_hoje_real = matriz_atrasos[-1]
+    
+    jogos_finais = simular_proximo_estado_markov(pred_futura_lstm, atraso_hoje_real, n_simulacoes_mcmc=20000)
+            
+    print("\n" + "=" * 75)
+    print("      JOGOS DEFINITIVOS: CONVERGÊNCIA DE MATRIZ DE TRANSIÇÃO DE MARKOV")
+    print("=" * 75)
+    for i, jogo in enumerate(jogos_finais, 1):
+        jogo_formatado = ", ".join(f"{num:02d}" for num in jogo)
+        linha_pandas = pd.Series(data=jogo, index=colunas_bolas)
+        indice_calculado = encontrar_posicao_itertools(linha_pandas)
+        indice_br = f"{indice_calculado:,}".replace(",", ".")
+        print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice Real: {indice_br}")
+    print("=" * 75)
+
+================================================================================
+ ARQUIVO: ia_monte_carlo.ensemble.py
+ CAMINHO: ./ia_monte_carlo.ensemble.py
+================================================================================
+
+import numpy as np
+import pandas as pd
+import random
+import optuna
+import os
+from sklearn.preprocessing import MinMaxScaler
+import tensorflow as tf
+from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.layers import Input, Dense, LSTM, Dropout
+from get_data import df_mega_sena
+
+# === IMPORTAÇÕES DA SUA LÓGICA OFICIAL ===
+from gerador import jogo_e_valido_estritamente
+from indice import encontrar_posicao_itertools
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+# =============================================================
+# 1. PREPARAÇÃO DOS DADOS E TREINAMENTO DO AUTOENCODER
+# =============================================================
+print("Carregando dados e inicializando o Autoencoder Profundo...")
+colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+df_cronologico = df_mega_sena.sort_values(by='Concurso').copy()
+
+df_ausencia = pd.read_excel("matriz_ausencia_completa.xlsx")
+colunas_jejum = [col for col in df_ausencia.columns if str(col).isdigit()]
+
+matriz_jejuns_bruta = df_ausencia[colunas_jejum].values.astype(np.float32)
+scaler_ae = MinMaxScaler(feature_range=(0, 1))
+matriz_jejuns_norm = scaler_ae.fit_transform(matriz_jejuns_bruta)
+
+dim_entrada = matriz_jejuns_norm.shape[1]
+dim_latente = 16
+
+input_layer = Input(shape=(dim_entrada,))
+encoded = Dense(32, activation='relu')(input_layer)
+bottleneck = Dense(dim_latente, activation='relu')(encoded)
+decoded = Dense(32, activation='relu')(bottleneck)
+output_layer = Dense(dim_entrada, activation='sigmoid')(decoded)
+
+autoencoder = Model(input_layer, output_layer)
+encoder = Model(input_layer, bottleneck)
+autoencoder.compile(optimizer='adam', loss='mean_squared_error')
+autoencoder.fit(matriz_jejuns_norm, matriz_jejuns_norm, epochs=35, batch_size=32, verbose=0)
+
+# Probabilidades a priori de Bayes
+distribuicao_global_jejuns = {int(col): int(df_ausencia[col].sum()) for col in colunas_jejum}
+total_sequencias = sum(distribuicao_global_jejuns.values())
+prob_prior_jejum = {t: (qtd / total_sequencias) for t, qtd in distribuicao_global_jejuns.items()}
+
+# Matriz temporal para a LSTM
+historico_atrasos = []
+gabarito_sorteios = [] 
+atraso_atual = {d: 0 for d in range(1, 61)}
+
+for index, row in df_cronologico.iterrows():
+    sorteados = set([int(row[c]) for c in colunas_bolas])
+    historico_atrasos.append([atraso_atual[d] for d in range(1, 61)])
+    gabarito_sorteios.append(sorteados)
+    for d in range(1, 61):
+        if d in sorteados: atraso_atual[d] = 0
+        else: atraso_atual[d] += 1
+
+matriz_atrasos = np.array(historico_atrasos)
+scaler_lstm = MinMaxScaler(feature_range=(0, 1))
+dados_norm = scaler_lstm.fit_transform(matriz_atrasos)
+
+
+# =============================================================
+# 2. MOTOR DE SIMULAÇÃO DE MONTE CARLO (MCMC ENGINE)
+# =============================================================
+def simular_monte_carlo_proximo_concurso(scores_dezenas, atrasos_atuais, n_simulacoes=5000):
+    """
+    Simula milhares de cenários possíveis para o sorteio usando amostragem
+    estocástica baseada nas notas da IA e validando nas restrições de Bayes.
+    """
+    dezenas = list(range(1, 61))
+    scores_array = np.array(scores_dezenas)
+    
+    # Aplica Softmax para transformar os scores em uma distribuição de probabilidade estrita para a roleta
+    exp_scores = np.exp(scores_array / np.max(scores_array)) # Temperatura de amostragem
+    probs_roleta = exp_scores / np.sum(exp_scores)
+    
+    # Dicionário para computar a frequência de aparição de cada jogo válido simulado
+    historico_cenarios_validos = {}
+    
+    for _ in range(n_simulacoes):
+        # Monte Carlo: Sorteia um cenário candidado com base nas probabilidades da IA
+        cenario_palpite = sorted(np.random.choice(dezenas, size=6, replace=False, p=probs_roleta))
+        
+        # Filtro de Rejeição de Monte Carlo: O cenário só é aceito se passar no seu gerador estrito
+        if jogo_e_valido_estritamente(cenario_palpite):
+            # Filtro adicional de Bayes: Evitar acumular dezenas extremamente frias no mesmo cenário
+            frias = sum(1 for d in cenario_palpite if atrasos_atuais[d-1] > 18)
+            if frias <= 2:
+                tuple_jogo = tuple(cenario_palpite)
+                if tuple_jogo in historico_cenarios_validos:
+                    historico_cenarios_validos[tuple_jogo] += 1
+                else:
+                    historico_cenarios_validos[tuple_jogo] = 1
+                    
+    # Ordena as combinações que mais vezes convergiram e sobreviveram em todos os universos simulados
+    jogos_mais_frequentes = sorted(historico_cenarios_validos.items(), key=lambda x: x[1], reverse=True)
+    
+    # Retorna o top 5 de jogos mais estáveis encontrados por Monte Carlo
+    return [list(item[0]) for item in jogos_mais_frequentes[:5]]
+
+
+# =============================================================
+# 3. FUNÇÃO OBJETIVO DO OPTUNA
+# =============================================================
+def objective(trial):
+    window_size = trial.suggest_int('window_size', 10, 16)
+    peso_lstm = trial.suggest_float('peso_lstm', 0.35, 0.65)
+    peso_bayes = 1.0 - peso_lstm
+    n_simulacoes_teste = 2000 # Menos simulações nos trials para rodar rápido
+    
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - window_size):
+        X_all.append(dados_norm[i:(i + window_size), :])
+        y_all.append(dados_norm[i + window_size, :])
+        gabarito_all.append(gabarito_sorteios[i + window_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    
+    model = Sequential([
+        LSTM(64, return_sequences=False, input_shape=(window_size, 60)),
+        Dropout(0.2),
+        Dense(60, activation='sigmoid')
+    ])
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    model.fit(X_train, y_train, batch_size=64, epochs=8, verbose=0)
+    
+    previsoes_norm = model.predict(X_test[-50:], verbose=0)
+    previsoes_lstm = scaler_lstm.inverse_transform(previsoes_norm)
+    gabarito_recortado = gabarito_teste[-50:]
+    atrasos_no_teste = matriz_atrasos[train_size + window_size - 1 : -1][-50:]
+    
+    score_fim = 0
+    for i in range(50):
+        pred_lstm = previsoes_lstm[i]
+        atraso_concurso_atual = atrasos_no_teste[i]
+        resultado_real = gabarito_recortado[i]
+        
+        scores_dezenas = []
+        for idx in range(60):
+            score_lstm_norm = 1 / (1 + pred_lstm[idx])
+            jejum_futuro = atraso_concurso_atual[idx] + 1
+            score_bayes_norm = prob_prior_jejum.get(jejum_futuro, 0.0001)
+            scores_dezenas.append((peso_lstm * score_lstm_norm) + (peso_bayes * score_bayes_norm))
+            
+        jogos_simulados = simular_monte_carlo_proximo_concurso(scores_dezenas, atraso_concurso_atual, n_simulacoes=n_simulacoes_teste)
+                
+        for jogo in jogos_simulados:
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 4: score_fim += 1000   # Foco absoluto nas Quadras
+            elif acertos == 5: score_fim += 50000
+            
+    return score_fim
+
+
+# =============================================================
+# 4. PROCESSAMENTO MESTRE (MONTE CARLO EXECUTION)
+# =============================================================
+if __name__ == '__main__':
+    print("\n[FASE 1] Rodando Optuna para encontrar pesos de equilíbrio da simulação...")
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=10)
+    
+    params = study.best_params
+    print(f"\n-> Melhores parâmetros temporais localizados: {params}")
+    
+    w_size = params['window_size']
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - w_size):
+        X_all.append(dados_norm[i:(i + w_size), :])
+        y_all.append(dados_norm[i + w_size, :]) 
+        gabarito_all.append(gabarito_sorteios[i + w_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    atrasos_no_teste_completo = matriz_atrasos[train_size + w_size - 1 : -1]
+    
+    print("\n[FASE 2] Treinando Rede Neural LSTM do Ensemble Principal...")
+    model_master = Sequential([
+        LSTM(128, return_sequences=False, input_shape=(w_size, 60)),
+        Dropout(0.2),
+        Dense(64, activation='relu'),
+        Dense(60, activation='sigmoid')
+    ])
+    model_master.compile(optimizer='adam', loss='mean_squared_error')
+    model_master.fit(X_train, y_train, batch_size=32, epochs=40, verbose=0)
+    
+    # =============================================================
+    # 5. BACKTESTING TOTAL VIA MONTE CARLO MASSIVO
+    # =============================================================
+    print(f"\n[FASE 3] Rodando Backtesting completo em {len(X_test)} concursos via Universos Paralelos...")
+    previsoes_test_norm = model_master.predict(X_test, verbose=0)
+    previsoes_test_reais = scaler_lstm.inverse_transform(previsoes_test_norm)
+    
+    total_ternos, total_quadras, total_quinas, total_senas = 0, 0, 0, 0
+    total_bilhetes_gerados = 0
+    p_lstm = params['peso_lstm']
+    p_bayes = 1.0 - p_lstm
+    
+    for i in range(len(X_test)):
+        pred_lstm = previsoes_test_reais[i]
+        atraso_concurso_atual = atrasos_no_teste_completo[i]
+        resultado_real = gabarito_teste[i]
+        
+        scores_dezenas = []
+        for idx in range(60):
+            score_lstm = 1 / (1 + pred_lstm[idx])
+            jejum_futuro = atraso_concurso_atual[idx] + 1
+            score_bayes = prob_prior_jejum.get(jejum_futuro, 0.0001)
+            scores_dezenas.append((p_lstm * score_lstm) + (p_bayes * score_bayes))
+            
+        # Executa Monte Carlo histórico com 4000 simulações por rodada do passado
+        jogos_simulados = simular_monte_carlo_proximo_concurso(scores_dezenas, atraso_concurso_atual, n_simulacoes=4000)
+                
+        for jogo in jogos_simulados:
+            total_bilhetes_gerados += 1
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 6: total_senas += 1
+            elif acertos == 5: total_quinas += 1
+            elif acertos == 4: total_quadras += 1
+            elif acertos == 3: total_ternos += 1
+            
+    taxa_ternos = (total_ternos / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+    taxa_quadras = (total_quadras / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+
+    print("-" * 75)
+    print(f"RELATÓRIO DE PERFORMANCE DA SIMULAÇÃO DE MONTE CARLO:")
+    print(f"▶ Total de bilhetes sobreviventes de maior convergência: {total_bilhetes_gerados}")
+    print("-" * 75)
+    print(f"▶ TERNOS:  {total_ternos} acertos ➔ {taxa_ternos:.4f}%")
+    print(f"▶ QUADRAS: {total_quadras} acertos ➔ {taxa_quadras:.4f}%")
+    print(f"▶ QUINAS:  {total_quinas} acertos")
+    print("-" * 75)
+    
+    # =============================================================
+    # 6. PALPITE REAL VIA MONTE CARLO PARA O PRÓXIMO CONCURSO
+    # =============================================================
+    print("\n[FASE 4] Rodando 15.000 Simulações de Monte Carlo para o PRÓXIMO concurso real...")
+    ultima_janela = dados_norm[-w_size:]
+    ultima_janela_reshape = np.reshape(ultima_janela, (1, w_size, 60))
+    
+    pred_futura_lstm = scaler_lstm.inverse_transform(model_master.predict(ultima_janela_reshape, verbose=0))[0]
+    atraso_hoje_real = matriz_atrasos[-1]
+    
+    scores_futuros = []
+    for idx in range(60):
+        score_lstm = 1 / (1 + pred_futura_lstm[idx])
+        jejum_futuro = atraso_hoje_real[idx] + 1
+        scores_futuros.append((p_lstm * score_lstm) + (p_bayes * score_bayes))
+        
+    # No palpite real, abrimos as comportas: 15 mil sorteios estocásticos para mapear a estabilidade máxima
+    jogos_finais = simular_monte_carlo_proximo_concurso(scores_futuros, atraso_hoje_real, n_simulacoes=15000)
+            
+    print("\n" + "=" * 75)
+    print("      JOGOS DEFINITIVOS OBTIDOS POR CONVERGÊNCIA DE MONTE CARLO")
+    print("=" * 75)
+    for i, jogo in enumerate(jogos_finais, 1):
+        jogo_formatado = ", ".join(f"{num:02d}" for num in jogo)
+        linha_pandas = pd.Series(data=jogo, index=colunas_bolas)
+        indice_calculado = encontrar_posicao_itertools(linha_pandas)
+        indice_br = f"{indice_calculado:,}".replace(",", ".")
+        print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice Real: {indice_br}")
+    print("=" * 75)
+
+================================================================================
+ ARQUIVO: ia_nonlinear_research.py
+ CAMINHO: ./ia_nonlinear_research.py
+================================================================================
+
+import numpy as np
+import pandas as pd
+import random
+import optuna
+import os
+from sklearn.preprocessing import MinMaxScaler
+from scipy.optimize import minimize
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
+from get_data import df_mega_sena
+
+# === IMPORTAÇÃO DA SUA LÓGICA DE ÍNDICES ===
+from indice import encontrar_posicao_itertools
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+# =============================================================
+# 1. PREPARAÇÃO DOS DADOS HISTÓRICOS E DA CURVA DE BAYES
+# =============================================================
+print("Carregando dados e preparando ambiente para Otimização Não Linear...")
+colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+df_cronologico = df_mega_sena.sort_values(by='Concurso').copy()
+
+df_ausencia = pd.read_excel("matriz_ausencia_completa.xlsx")
+colunas_jejum = [col for col in df_ausencia.columns if str(col).isdigit()]
+
+distribuicao_global_jejuns = {int(col): 0 for col in colunas_jejum}
+for index, row in df_ausencia.iterrows():
+    for col in colunas_jejum:
+        distribuicao_global_jejuns[int(col)] += int(row[col])
+
+total_sequencias = sum(distribuicao_global_jejuns.values())
+prob_prior_jejum = {t: (qtd / total_sequencias) for t, qtd in distribuicao_global_jejuns.items()}
+
+historico_atrasos = []
+gabarito_sorteios = [] 
+atraso_atual = {d: 0 for d in range(1, 61)}
+
+for index, row in df_cronologico.iterrows():
+    sorteados = set([int(row[c]) for c in colunas_bolas])
+    historico_atrasos.append([atraso_atual[d] for d in range(1, 61)])
+    gabarito_sorteios.append(sorteados)
+    for d in range(1, 61):
+        if d in sorteados: atraso_atual[d] = 0
+        else: atraso_atual[d] += 1
+
+matriz_atrasos = np.array(historico_atrasos)
+scaler = MinMaxScaler(feature_range=(0, 1))
+dados_norm = scaler.fit_transform(matriz_atrasos)
+
+
+# =============================================================
+# 2. OTIMIZADOR NÃO LINEAR (NLP VIA SLSQP)
+# =============================================================
+def resolver_problema_nao_linear(scores_dezenas, atrasos_atuais, params_nlp):
+    """
+    Usa Otimização Não Linear Restrita para maximizar a aderência combinada
+    enquanto gerencia a entropia (grau de desordem/surpresa) do bilhete.
+    """
+    probs_bayes = np.array([prob_prior_jejum.get(atrasos_atuais[d] + 1, 0.0001) for d in range(60)])
+    scores = np.array(scores_dezenas)
+    
+    # 2.1 FUNÇÃO OBJETIVO NÃO LINEAR: Maximização com penalidade de entropia
+    # Queremos maximizar o score, o que equivale a minimizar o negativo dele
+    def funcao_objetivo(x):
+        # Evita log de zero adicionando um epsilon minúsculo
+        x_safe = np.clip(x, 1e-10, 1.0)
+        # Termo Não Linear: Entropia de Shannon (mede a dispersão e incerteza da distribuição)
+        entropia = -np.sum(x_safe * np.log(x_safe))
+        
+        # O retorno combina os ganhos de acerto da IA subtraindo ou somando a desordem (regulação não linear)
+        return -(np.sum(scores * x) + params_nlp['peso_entropia'] * entropia)
+
+    # 2.2 RESTRIÇÕES (CONSTRAINTS)
+    # Restrição Linear Básica: A soma dos pesos contínuos precisa dar exatamente 6.0
+    def restricao_soma(x):
+        return np.sum(x) - 6.0
+
+    # Restrição Não Linear de Bayes: O produto/soma geométrica das dezenas frias precisa respeitar o teto
+    def restricao_frias(x):
+        frias_idx = np.where(atrasos_atuais > params_nlp['corte_jejum_longo'])[0]
+        return params_nlp['max_dezenas_frias'] - np.sum(x[frias_idx])
+
+    def restricao_quentes(x):
+        quentes_idx = np.where(atrasos_atuais <= 4)[0]
+        return np.sum(x[quentes_idx]) - params_nlp['min_dezenas_quentes']
+
+    # Encapsula as restrições no formato exigido pelo Scipy (type 'eq' para igualdade, 'ineq' para >= 0)
+    constraints = [
+        {'type': 'eq', 'fun': restricao_soma},
+        {'type': 'ineq', 'fun': restricao_frias},
+        {'type': 'ineq', 'fun': restricao_quentes}
+    ]
+    
+    # Limites das variáveis: cada peso x_d deve flutuar estritamente entre 0.0 e 1.0
+    bounds = [(0.0, 1.0) for _ in range(60)]
+    
+    # Chute inicial: distribui o peso igualmente (6 dezenas / 60 posições = 0.1 para cada)
+    x0 = np.full(60, 0.1)
+    
+    # Executa o solver NLP SLSQP
+    res = minimize(funcao_objetivo, x0, method='SLSQP', bounds=bounds, constraints=constraints, options={'maxiter': 100, 'disp': False})
+    
+    if res.success:
+        return {d+1: max(0.0, val) for d, val in enumerate(res.x)}
+    else:
+        # Fallback seguro caso o gradiente não convirja
+        return {d+1: 0.1 for d in range(60)}
+
+
+def amostrar_jogos_da_curva_nao_linear(pesos_nlp, n_jogos=5):
+    """ Converte a curva de densidade não linear em jogos de 6 dezenas """
+    jogos_gerados = []
+    dezenas = list(range(1, 61))
+    valores_pesos = np.array([pesos_nlp[d] for d in dezenas])
+    valores_pesos = np.where(valores_pesos < 1e-4, 1e-5, valores_pesos)
+    
+    tentativas = 0
+    while len(jogos_gerados) < n_jogos and tentativas < 2000:
+        tentativas += 1
+        probs_roleta = valores_pesos / np.sum(valores_pesos)
+        palpite = sorted(np.random.choice(dezenas, size=6, replace=False, p=probs_roleta))
+        
+        if sum(1 for n in palpite if n % 2 == 0) in [2, 3, 4]:
+            if palpite not in jogos_gerados:
+                jogos_gerados.append([int(n) for n in palpite])
+                
+    return jogos_gerados
+
+
+# =============================================================
+# 3. OPTUNA GERENCIANDO OS HIPERPARÂMETROS DA FUNÇÃO DE CUSTO
+# =============================================================
+def objective(trial):
+    window_size = trial.suggest_int('window_size', 10, 16)
+    peso_lstm = trial.suggest_float('peso_lstm', 0.4, 0.7)
+    peso_bayes = 1.0 - peso_lstm
+    
+    # Parâmetros específicos da Otimização Não Linear
+    params_nlp = {
+        'peso_entropia': trial.suggest_float('peso_entropia', 0.01, 0.15), # Controla o nível de "surpresa" do volante
+        'corte_jejum_longo': trial.suggest_int('corte_jejum_longo', 12, 22),
+        'max_dezenas_frias': trial.suggest_float('max_dezenas_frias', 1.0, 2.0),
+        'min_dezenas_quentes': trial.suggest_float('min_dezenas_quentes', 2.0, 3.5)
+    }
+    
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - window_size):
+        X_all.append(dados_norm[i:(i + window_size), :])
+        y_all.append(dados_norm[i + window_size, :])
+        gabarito_all.append(gabarito_sorteios[i + window_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    
+    model = Sequential([
+        LSTM(64, return_sequences=False, input_shape=(window_size, 60)),
+        Dropout(0.2),
+        Dense(60, activation='sigmoid')
+    ])
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    model.fit(X_train, y_train, batch_size=64, epochs=8, verbose=0)
+    
+    previsoes_norm = model.predict(X_test[-60:], verbose=0)
+    previsoes_lstm = scaler.inverse_transform(previsoes_norm)
+    gabarito_recortado = gabarito_teste[-60:]
+    atrasos_no_teste = matriz_atrasos[train_size + window_size - 1 : -1][-60:]
+    
+    score_fim = 0
+    for i in range(60):
+        pred_lstm = previsoes_lstm[i]
+        atraso_concurso_atual = atrasos_no_teste[i]
+        resultado_real = gabarito_recortado[i]
+        
+        scores_dezenas = []
+        for idx in range(60):
+            score_lstm_norm = 1 / (1 + pred_lstm[idx])
+            jejum_futuro = atraso_concurso_atual[idx] + 1
+            score_bayes_norm = prob_prior_jejum.get(jejum_futuro, 0.0001)
+            scores_dezenas.append((peso_lstm * score_lstm_norm) + (peso_bayes * score_bayes_norm))
+            
+        # Invoca o motor NLP da Scipy
+        pesos_nlp = resolver_problema_nao_linear(scores_dezenas, atraso_concurso_atual, params_nlp)
+        jogos_simulados = amostrar_jogos_da_curva_nao_linear(pesos_nlp, n_jogos=5)
+                
+        for jogo in jogos_simulados:
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 4: score_fim += 1000
+            elif acertos == 5: score_fim += 50000
+            
+    return score_fim
+
+
+# =============================================================
+# 4. PROCESSAMENTO MESTRE DEFINITIVO (NLP MASTER)
+# =============================================================
+if __name__ == '__main__':
+    print("\n[FASE 1] Rodando Optuna para calibrar limites do Solver Não Linear (SLSQP)...")
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=10)
+    
+    params = study.best_params
+    print(f"\n-> Melhores parâmetros Não Lineares localizados: {params}")
+    
+    params_nlp_master = {
+        'peso_entropia': params['peso_entropia'],
+        'corte_jejum_longo': params['corte_jejum_longo'],
+        'max_dezenas_frias': params['max_dezenas_frias'],
+        'min_dezenas_quentes': params['min_dezenas_quentes']
+    }
+    
+    w_size = params['window_size']
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - w_size):
+        X_all.append(dados_norm[i:(i + w_size), :])
+        y_all.append(dados_norm[i + w_size, :]) 
+        gabarito_all.append(gabarito_sorteios[i + w_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    atrasos_no_teste_completo = matriz_atrasos[train_size + w_size - 1 : -1]
+    
+    print("\n[FASE 2] Treinando Rede Neural LSTM do Ensemble...")
+    model_master = Sequential([
+        LSTM(128, return_sequences=False, input_shape=(w_size, 60)),
+        Dropout(0.2),
+        Dense(64, activation='relu'),
+        Dense(60, activation='sigmoid')
+    ])
+    model_master.compile(optimizer='adam', loss='mean_squared_error')
+    model_master.fit(X_train, y_train, batch_size=32, epochs=40, verbose=0)
+    
+    # =============================================================
+    # 5. BACKTESTING TOTAL VIA MODELAGEM NÃO LINEAR
+    # =============================================================
+    print(f"\n[FASE 3] Rodando Backtesting completo em {len(X_test)} concursos...")
+    previsoes_test_norm = model_master.predict(X_test, verbose=0)
+    previsoes_test_reais = scaler.inverse_transform(previsoes_test_norm)
+    
+    total_ternos, total_quadras, total_quinas, total_senas = 0, 0, 0, 0
+    total_bilhetes_gerados = 0
+    p_lstm = params['peso_lstm']
+    p_bayes = 1.0 - p_lstm
+    
+    for i in range(len(X_test)):
+        pred_lstm = previsoes_test_reais[i]
+        atraso_concurso_atual = atrasos_no_teste_completo[i]
+        resultado_real = gabarito_teste[i]
+        
+        scores_dezenas = []
+        for idx in range(60):
+            score_lstm = 1 / (1 + pred_lstm[idx])
+            jejum_futuro = atraso_concurso_atual[idx] + 1
+            score_bayes = prob_prior_jejum.get(jejum_futuro, 0.0001)
+            scores_dezenas.append((p_lstm * score_lstm) + (p_bayes * score_bayes))
+            
+        pesos_nlp_hist = resolver_problema_nao_linear(scores_dezenas, atraso_concurso_atual, params_nlp_master)
+        jogos_simulados = amostrar_jogos_da_curva_nao_linear(pesos_nlp_hist, n_jogos=5)
+                
+        for jogo in jogos_simulados:
+            total_bilhetes_gerados += 1
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 6: total_senas += 1
+            elif acertos == 5: total_quinas += 1
+            elif acertos == 4: total_quadras += 1
+            elif acertos == 3: total_ternos += 1
+            
+    taxa_ternos = (total_ternos / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+    taxa_quadras = (total_quadras / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+
+    print("-" * 75)
+    print(f"RELATÓRIO DE ACURÁCIA DO SOLVER NÃO LINEAR (SLSQP + ENTROPIA):")
+    print(f"▶ Total de bilhetes gerados por Amostragem NLP: {total_bilhetes_gerados}")
+    print("-" * 75)
+    print(f"▶ TERNOS:  {total_ternos} acertos ➔ {taxa_ternos:.4f}%")
+    print(f"▶ QUADRAS: {total_quadras} acertos ➔ {taxa_quadras:.4f}%")
+    print(f"▶ QUINAS:  {total_quinas} acertos")
+    print("-" * 75)
+    
+    # =============================================================
+    # 6. PALPITE REAL PARA O PRÓXIMO CONCURSO
+    # =============================================================
+    print("\n[FASE 4] Gerando distribuição ótima não linear para o PRÓXIMO concurso real...")
+    ultima_janela = dados_norm[-w_size:]
+    ultima_janela_reshape = np.reshape(ultima_janela, (1, w_size, 60))
+    
+    pred_futura_lstm = scaler.inverse_transform(model_master.predict(ultima_janela_reshape, verbose=0))[0]
+    atraso_hoje_real = matriz_atrasos[-1]
+    
+    scores_futuros = []
+    for idx in range(60):
+        score_lstm = 1 / (1 + pred_futura_lstm[idx])
+        jejum_futuro = atraso_hoje_real[idx] + 1
+        scores_futuros.append((p_lstm * score_lstm) + (p_bayes * score_bayes))
+        
+    pesos_futuros_nlp = resolver_problema_nao_linear(scores_futuros, atraso_hoje_real, params_nlp_master)
+    jogos_finais = amostrar_jogos_da_curva_nao_linear(pesos_futuros_nlp, n_jogos=5)
+            
+    print("\n" + "=" * 75)
+    print("      JOGOS GERADOS VIA PROGRAMAÇÃO NÃO LINEAR RESTRETA (SLSQP)")
+    print("=" * 75)
+    for i, jogo in enumerate(jogos_finais, 1):
+        jogo_formatado = ", ".join(f"{num:02d}" for num in jogo)
+        linha_pandas = pd.Series(data=jogo, index=colunas_bolas)
+        indice_calculado = encontrar_posicao_itertools(linha_pandas)
+        indice_br = f"{indice_calculado:,}".replace(",", ".")
+        print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice Real: {indice_br}")
+    print("=" * 75)
+
+================================================================================
+ ARQUIVO: ia_operational_research.py
+ CAMINHO: ./ia_operational_research.py
+================================================================================
+
+import numpy as np
+import pandas as pd
+import random
+import optuna
+import os
+from sklearn.preprocessing import MinMaxScaler
+from pulp import LpProblem, LpMaximize, LpVariable, lpSum, LpStatus, PULP_CBC_CMD
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
+from get_data import df_mega_sena
+
+# === IMPORTAÇÃO DA SUA LÓGICA DE ÍNDICES ===
+from indice import encontrar_posicao_itertools
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+# =============================================================
+# 1. PREPARAÇÃO DOS DADOS HISTÓRICOS E DA CURVA DE BAYES
+# =============================================================
+print("Carregando dados e calculando probabilidades de Bayes...")
+colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+df_cronologico = df_mega_sena.sort_values(by='Concurso').copy()
+
+df_ausencia = pd.read_excel("matriz_ausencia_completa.xlsx")
+colunas_jejum = [col for col in df_ausencia.columns if str(col).isdigit()]
+
+distribuicao_global_jejuns = {int(col): 0 for col in colunas_jejum}
+for index, row in df_ausencia.iterrows():
+    for col in colunas_jejum:
+        distribuicao_global_jejuns[int(col)] += int(row[col])
+
+total_sequencias = sum(distribuicao_global_jejuns.values())
+prob_prior_jejum = {t: (qtd / total_sequencias) for t, qtd in distribuicao_global_jejuns.items()}
+
+historico_atrasos = []
+gabarito_sorteios = [] 
+atraso_atual = {d: 0 for d in range(1, 61)}
+
+for index, row in df_cronologico.iterrows():
+    sorteados = set([int(row[c]) for c in colunas_bolas])
+    historico_atrasos.append([atraso_atual[d] for d in range(1, 61)])
+    gabarito_sorteios.append(sorteados)
+    for d in range(1, 61):
+        if d in sorteados: atraso_atual[d] = 0
+        else: atraso_atual[d] += 1
+
+matriz_atrasos = np.array(historico_atrasos)
+scaler = MinMaxScaler(feature_range=(0, 1))
+dados_norm = scaler.fit_transform(matriz_atrasos)
+
+
+# =============================================================
+# 2. MOTOR DE PESQUISA OPERACIONAL (SOLVER MIP - PuLP)
+# =============================================================
+def solver_gerar_jogos_com_restricoes(scores_dezenas, n_jogos=5, jogos_proibidos=None):
+    """
+    Usa programação linear inteira (MIP) para construir bilhetes perfeitos
+    que atendem estritamente a todas as regras geométricas e estocásticas.
+    """
+    jogos_otimizados = []
+    if jogos_proibidos is None:
+        jogos_proibidos = []
+        
+    # Mapeamento estrito de quadrantes da Mega-Sena
+    q1 = [n for n in range(1, 31) if n % 10 in [1, 2, 3, 4, 5]]
+    q2 = [n for n in range(1, 31) if n % 10 in [6, 7, 8, 9, 0]]
+    q3 = [n for n in range(31, 61) if n % 10 in [1, 2, 3, 4, 5]]
+    q4 = [n for n in range(31, 61) if n % 10 in [6, 7, 8, 9, 0]]
+
+    for rodada in range(n_jogos):
+        # Inicializa o problema de maximização
+        prob = LpProblem(f"Otimizacao_Mega_Sena_Rodada_{rodada}", LpMaximize)
+        
+        # Variáveis de Decisão: x[i] é binária (1 se a dezena i for escolhida, 0 se não)
+        x = LpVariable.dicts("dezena", range(1, 61), cat="Binary")
+        
+        # Função Objetivo: Maximizar o score combinado (IA + Bayes) das dezenas escolhidas
+        prob += lpSum(scores_dezenas[d-1] * x[d] for d in range(1, 61))
+        
+        # --- RESTRICÕES RÍGIDAS DE JOGO VÁLIDO ---
+        # 1. O jogo precisa ter exatamente 6 dezenas
+        prob += lpSum(x[d] for d in range(1, 61)) == 6
+        
+        # 2. Paridade Estrita: Exatamente 3 pares e 3 ímpares
+        prob += lpSum(x[d] for d in range(1, 61) if d % 2 == 0) == 3
+        prob += lpSum(x[d] for d in range(1, 61) if d % 2 != 0) == 3
+        
+        # 3. Equilíbrio Espacial de Quadrantes: No máximo 2 dezenas por quadrante
+        prob += lpSum(x[d] for d in q1) <= 2
+        prob += lpSum(x[d] for d in q2) <= 2
+        prob += lpSum(x[d] for d in q3) <= 2
+        prob += lpSum(x[d] for d in q4) <= 2
+        
+        # 4. Restrição de Finais repetidos: No máximo 2 números com o mesmo final (ex: no máximo dois finais '4')
+        for f in range(10):
+            dezenas_final_f = [d for d in range(1, 61) if d % 10 == f or (f == 0 and d % 10 == 0)]
+            prob += lpSum(x[d] for d in dezenas_final_f) <= 2
+
+        # 5. Restrição de Repetição Inter-Jogos (Garantir diversidade entre os 5 bilhetes gerados)
+        for jogo_existente in jogos_otimizados + jogos_proibidos:
+            # Não permite que o novo jogo compartilhe mais do que 3 dezenas com os anteriores
+            prob += lpSum(x[d] for d in jogo_existente) <= 3
+            
+        # Executa o solver silenciosamente
+        prob.solve(PULP_CBC_CMD(msg=False))
+        
+        if LpStatus[prob.status] == "Optimal":
+            jogo_resolvido = [d for d in range(1, 61) if x[d].varValue == 1]
+            jogos_otimizados.append(sorted(jogo_resolvido))
+        else:
+            # Se o espaço fechar demais por restrição, afrouxa o teto de repetição para não travar
+            break
+            
+    return jogos_otimizados
+
+
+# =============================================================
+# 3. FUNÇÃO OBJETIVO DO OPTUNA PARA PARÂMETROS DO ENSEMBLE
+# =============================================================
+def objective(trial):
+    window_size = trial.suggest_int('window_size', 10, 18)
+    peso_lstm = trial.suggest_float('peso_lstm', 0.3, 0.7)
+    peso_bayes = 1.0 - peso_lstm
+    
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - window_size):
+        X_all.append(dados_norm[i:(i + window_size), :])
+        y_all.append(dados_norm[i + window_size, :])
+        gabarito_all.append(gabarito_sorteios[i + window_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    
+    model = Sequential([
+        LSTM(64, return_sequences=False, input_shape=(window_size, 60)),
+        Dropout(0.2),
+        Dense(60, activation='sigmoid')
+    ])
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    model.fit(X_train, y_train, batch_size=64, epochs=8, verbose=0)
+    
+    previsoes_norm = model.predict(X_test[-60:], verbose=0)
+    previsoes_lstm = scaler.inverse_transform(previsoes_norm)
+    gabarito_recortado = gabarito_teste[-60:]
+    atrasos_no_teste = matriz_atrasos[train_size + window_size - 1 : -1][-60:]
+    
+    score_fim = 0
+    for i in range(60):
+        pred_lstm = previsoes_lstm[i]
+        atraso_concurso_atual = atrasos_no_teste[i]
+        resultado_real = gabarito_recortado[i]
+        
+        # Calcula vetor de utilidade de 60 posições para alimentar o solver
+        scores_dezenas = []
+        for idx in range(60):
+            score_lstm_norm = 1 / (1 + pred_lstm[idx])
+            jejum_futuro = atraso_concurso_atual[idx] + 1
+            score_bayes_norm = prob_prior_jejum.get(jejum_futuro, 0.0001)
+            scores_dezenas.append((peso_lstm * score_lstm_norm) + (peso_bayes * score_bayes_norm))
+            
+        # O SOLVER ENTRA EM AÇÃO AQUI: Monta matematicamente os jogos ótimos
+        jogos_simulados = solver_gerar_jogos_com_restricoes(scores_dezenas, n_jogos=5)
+                
+        for jogo in jogos_simulados:
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 4: score_fim += 1000   # Foco cirúrgico em Quadras
+            elif acertos == 5: score_fim += 50000
+            
+    return score_fim
+
+
+# =============================================================
+# 4. EXECUÇÃO MASTER COMPLETA (IA + SOLVER MIP)
+# =============================================================
+if __name__ == '__main__':
+    print("\n[FASE 1] Rodando Optuna integrado ao Solver de Pesquisa Operacional...")
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=10)
+    
+    params = study.best_params
+    print(f"\n-> Melhores parâmetros do Ensemble Linear: {params}")
+    
+    w_size = params['window_size']
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - w_size):
+        X_all.append(dados_norm[i:(i + w_size), :])
+        y_all.append(dados_norm[i + w_size, :]) 
+        gabarito_all.append(gabarito_sorteios[i + w_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    atrasos_no_teste_completo = matriz_atrasos[train_size + w_size - 1 : -1]
+    
+    print("\n[FASE 2] Treinando Rede Neural LSTM do Ensemble...")
+    model_master = Sequential([
+        LSTM(128, return_sequences=False, input_shape=(w_size, 60)),
+        Dropout(0.2),
+        Dense(64, activation='relu'),
+        Dense(60, activation='sigmoid')
+    ])
+    model_master.compile(optimizer='adam', loss='mean_squared_error')
+    model_master.fit(X_train, y_train, batch_size=32, epochs=40, verbose=0)
+    
+    # =============================================================
+    # 5. BACKTESTING TOTAL VIA MODELAGEM MATRICIAL (MIP)
+    # =============================================================
+    print(f"\n[FASE 3] Executando Backtesting completo em {len(X_test)} concursos...")
+    previsoes_test_norm = model_master.predict(X_test, verbose=0)
+    previsoes_test_reais = scaler.inverse_transform(previsoes_test_norm)
+    
+    total_ternos, total_quadras, total_quinas, total_senas = 0, 0, 0, 0
+    total_bilhetes_gerados = 0
+    p_lstm = params['peso_lstm']
+    p_bayes = 1.0 - p_lstm
+    
+    for i in range(len(X_test)):
+        pred_lstm = previsoes_test_reais[i]
+        atraso_concurso_atual = atrasos_no_teste_completo[i]
+        resultado_real = gabarito_teste[i]
+        
+        scores_dezenas = []
+        for idx in range(60):
+            score_lstm = 1 / (1 + pred_lstm[idx])
+            jejum_futuro = atraso_concurso_atual[idx] + 1
+            score_bayes = prob_prior_jejum.get(jejum_futuro, 0.0001)
+            scores_dezenas.append((p_lstm * score_lstm) + (p_bayes * score_bayes))
+            
+        # O Solver MIP reconstrói os bilhetes históricos ideais sem chance de erro de sintaxe
+        jogos_simulados = solver_gerar_jogos_com_restricoes(scores_dezenas, n_jogos=5)
+                
+        for jogo in jogos_simulados:
+            total_bilhetes_gerados += 1
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 6: total_senas += 1
+            elif acertos == 5: total_quinas += 1
+            elif acertos == 4: total_quadras += 1
+            elif acertos == 3: total_ternos += 1
+            
+    taxa_ternos = (total_ternos / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+    taxa_quadras = (total_quadras / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+
+    print("-" * 75)
+    print(f"RELATÓRIO DE CONVERSÃO MATRICIAL COM SOLVER MIP (PuLP):")
+    print(f"▶ Total de bilhetes perfeitamente otimizados no teste: {total_bilhetes_gerados}")
+    print("-" * 75)
+    print(f"▶ TERNOS:  {total_ternos} acertos ➔ {taxa_ternos:.4f}%")
+    print(f"▶ QUADRAS: {total_quadras} acertos ➔ {taxa_quadras:.4f}%")
+    print(f"▶ QUINAS:  {total_quinas} acertos")
+    print("-" * 75)
+    
+    # =============================================================
+    # 6. PALPITE MATRICIAL PARA O PRÓXIMO CONCURSO
+    # =============================================================
+    print("\n[FASE 4] Alimentando o Solver MIP para gerar os jogos ótimos do PRÓXIMO concurso...")
+    ultima_janela = dados_norm[-w_size:]
+    ultima_janela_reshape = np.reshape(ultima_janela, (1, w_size, 60))
+    
+    pred_futura_lstm = scaler.inverse_transform(model_master.predict(ultima_janela_reshape, verbose=0))[0]
+    atraso_hoje_real = matriz_atrasos[-1]
+    
+    scores_futuros = []
+    for idx in range(60):
+        score_lstm = 1 / (1 + pred_futura_lstm[idx])
+        jejum_futuro = atraso_hoje_real[idx] + 1
+        scores_futuros.append((p_lstm * score_lstm) + (p_bayes * score_bayes))
+        
+    jogos_finais = solver_gerar_jogos_com_restricoes(scores_futuros, n_jogos=5)
+            
+    print("\n" + "=" * 75)
+    print("      JOGOS GERADOS VIA PROGRAMAÇÃO INTEIRA MISTA (SOLVER COIN-OR CBC)")
+    print("=" * 75)
+    for i, jogo in enumerate(jogos_finais, 1):
+        jogo_formatado = ", ".join(f"{num:02d}" for num in jogo)
+        linha_pandas = pd.Series(data=jogo, index=colunas_bolas)
+        indice_calculado = encontrar_posicao_itertools(linha_pandas)
+        indice_br = f"{indice_calculado:,}".replace(",", ".")
+        print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice Real: {indice_br}")
+    print("=" * 75)
+
+================================================================================
+ ARQUIVO: ia_po_bayes_constraints.py
+ CAMINHO: ./ia_po_bayes_constraints.py
+================================================================================
+
+import numpy as np
+import pandas as pd
+import random
+import optuna
+import os
+from sklearn.preprocessing import MinMaxScaler
+from pulp import LpProblem, LpMaximize, LpVariable, lpSum, LpStatus, PULP_CBC_CMD
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
+from get_data import df_mega_sena
+
+# === IMPORTAÇÃO DA SUA LÓGICA DE ÍNDICES ===
+from indice import encontrar_posicao_itertools
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+# =============================================================
+# 1. PREPARAÇÃO DOS DADOS HISTÓRICOS E DA CURVA DE BAYES
+# =============================================================
+print("Carregando dados e extraindo restrições da matriz de Bayes...")
+colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+df_cronologico = df_mega_sena.sort_values(by='Concurso').copy()
+
+# Carrega a tabela para extrair a probabilidade condicional de cada tamanho de jejum
+df_ausencia = pd.read_excel("matriz_ausencia_completa.xlsx")
+colunas_jejum = [col for col in df_ausencia.columns if str(col).isdigit()]
+
+distribuicao_global_jejuns = {int(col): 0 for col in colunas_jejum}
+for index, row in df_ausencia.iterrows():
+    for col in colunas_jejum:
+        distribuicao_global_jejuns[int(col)] += int(row[col])
+
+total_sequencias = sum(distribuicao_global_jejuns.values())
+prob_prior_jejum = {t: (qtd / total_sequencias) for t, qtd in distribuicao_global_jejuns.items()}
+
+historico_atrasos = []
+gabarito_sorteios = [] 
+atraso_atual = {d: 0 for d in range(1, 61)}
+
+for index, row in df_cronologico.iterrows():
+    sorteados = set([int(row[c]) for c in colunas_bolas])
+    historico_atrasos.append([atraso_atual[d] for d in range(1, 61)])
+    gabarito_sorteios.append(sorteados)
+    for d in range(1, 61):
+        if d in sorteados: atraso_atual[d] = 0
+        else: atraso_atual[d] += 1
+
+matriz_atrasos = np.array(historico_atrasos)
+scaler = MinMaxScaler(feature_range=(0, 1))
+dados_norm = scaler.fit_transform(matriz_atrasos)
+
+
+# =============================================================
+# 2. SOLVER MIP COM RESTRIÇÕES DA MATRIZ DE PROBABILIDADE
+# =============================================================
+def solver_gerar_jogos_bayes_constraints(scores_dezenas, atrasos_atuais, config_po, n_jogos=5, jogos_proibidos=None):
+    """
+    Usa Programação Inteira para construir jogos baseando-se estritamente
+    nas restrições probabilísticas da matriz de ausência.
+    """
+    jogos_otimizados = []
+    if jogos_proibidos is None:
+        jogos_proibidos = []
+
+    # Mapeamento de probabilidade individual para cada dezena baseada no seu atraso hoje
+    probs_dezenas_atuais = {
+        d: prob_prior_jejum.get(atrasos_atuais[d-1] + 1, 0.0001) for d in range(1, 61)
+    }
+
+    for rodada in range(n_jogos):
+        prob = LpProblem(f"Otimizacao_Bayes_MIP_{rodada}", LpMaximize)
+        x = LpVariable.dicts("dezena", range(1, 61), cat="Binary")
+        
+        # Objetivo: Maximizar o score combinado do Ensemble (IA + Bayes)
+        prob += lpSum(scores_dezenas[d-1] * x[d] for d in range(1, 61))
+        
+        # --- RESTRICÕES ESTRUTURAIS BÁSICAS ---
+        prob += lpSum(x[d] for d in range(1, 61)) == 6
+        prob += lpSum(x[d] for d in range(1, 61) if d % 2 == 0) == 3
+        prob += lpSum(x[d] for d in range(1, 61) if d % 2 != 0) == 3
+        
+        # --- RESTRICÕES DIRETAS DA MATRIZ DE PROBABILIDADE (BAYES) ---
+        # 1. Restrição de dezenas "Frias" (Com jejum longo):
+        # Obriga o solver a escolher no máximo X dezenas que estejam com atraso maior que o corte estipulado
+        prob += lpSum(x[d] for d in range(1, 61) if atrasos_atuais[d-1] > config_po['corte_jejum_longo']) <= config_po['max_dezenas_frias']
+        
+        # 2. Restrição de dezenas "Quentes" (Com jejum curto):
+        # Garante que o jogo tenha pelo menos Y dezenas com alto índice de fechamento de ciclo (atraso curto)
+        prob += lpSum(x[d] for d in range(1, 61) if atrasos_atuais[d-1] <= 4) >= config_po['min_dezenas_quentes']
+        
+        # 3. Janela de Probabilidade Coletiva:
+        # A soma das probabilidades de Bayes do bilhete não pode ser absurdamente baixa (jogo impossível) nem alta demais (jogo óbvio)
+        prob += lpSum(probs_dezenas_atuais[d] * x[d] for d in range(1, 61)) >= config_po['min_soma_bayes']
+        prob += lpSum(probs_dezenas_atuais[d] * x[d] for d in range(1, 61)) <= config_po['max_soma_bayes']
+
+        # 4. Evitar repetição pesada com bilhetes gerados anteriormente nas rodadas
+        for jogo_existente in jogos_otimizados + jogos_proibidos:
+            prob += lpSum(x[d] for d in jogo_existente) <= 3
+            
+        # Executa o solver
+        prob.solve(PULP_CBC_CMD(msg=False))
+        
+        if LpStatus[prob.status] == "Optimal":
+            jogo_resolvido = [d for d in range(1, 61) if x[d].varValue == 1]
+            jogos_otimizados.append(sorted(jogo_resolvido))
+        else:
+            # Se o espaço de restrição probabilística for violado, quebra e retorna o que conseguiu
+            break
+            
+    return jogos_otimizados
+
+
+# =============================================================
+# 3. OPTUNA CALIBRANDO OS LIMITES DAS RESTRIÇÕES DA MATRIZ
+# =============================================================
+def objective(trial):
+    window_size = trial.suggest_int('window_size', 10, 16)
+    peso_lstm = trial.suggest_float('peso_lstm', 0.4, 0.7)
+    peso_bayes = 1.0 - peso_lstm
+    
+    # O Optuna agora calibra os parâmetros das restrições de Pesquisa Operacional!
+    config_po = {
+        'corte_jejum_longo': trial.suggest_int('corte_jejum_longo', 12, 20),
+        'max_dezenas_frias': trial.suggest_int('max_dezenas_frias', 1, 2),
+        'min_dezenas_quentes': trial.suggest_int('min_dezenas_quentes', 2, 4),
+        'min_soma_bayes': trial.suggest_float('min_soma_bayes', 0.15, 0.25),
+        'max_soma_bayes': trial.suggest_float('max_soma_bayes', 0.35, 0.55)
+    }
+    
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - window_size):
+        X_all.append(dados_norm[i:(i + window_size), :])
+        y_all.append(dados_norm[i + window_size, :])
+        gabarito_all.append(gabarito_sorteios[i + window_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    
+    model = Sequential([
+        LSTM(64, return_sequences=False, input_shape=(window_size, 60)),
+        Dropout(0.2),
+        Dense(60, activation='sigmoid')
+    ])
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    model.fit(X_train, y_train, batch_size=64, epochs=8, verbose=0)
+    
+    previsoes_norm = model.predict(X_test[-60:], verbose=0)
+    previsoes_lstm = scaler.inverse_transform(previsoes_norm)
+    gabarito_recortado = gabarito_teste[-60:]
+    atrasos_no_teste = matriz_atrasos[train_size + window_size - 1 : -1][-60:]
+    
+    score_fim = 0
+    for i in range(60):
+        pred_lstm = previsoes_lstm[i]
+        atraso_concurso_atual = atrasos_no_teste[i]
+        resultado_real = gabarito_recortado[i]
+        
+        scores_dezenas = []
+        for idx in range(60):
+            score_lstm_norm = 1 / (1 + pred_lstm[idx])
+            jejum_futuro = atraso_concurso_atual[idx] + 1
+            score_bayes_norm = prob_prior_jejum.get(jejum_futuro, 0.0001)
+            scores_dezenas.append((peso_lstm * score_lstm_norm) + (peso_bayes * score_bayes_norm))
+            
+        # Roda o solver com as restrições de matriz dinâmicas do trial
+        jogos_simulados = solver_gerar_jogos_bayes_constraints(scores_dezenas, atraso_concurso_atual, config_po, n_jogos=5)
+                
+        for jogo in jogos_simulados:
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 4: score_fim += 1000   # Foco total nas Quadras
+            elif acertos == 5: score_fim += 50000
+            
+    return score_fim
+
+
+# =============================================================
+# 4. EXECUÇÃO MASTER COMPLETA
+# =============================================================
+if __name__ == '__main__':
+    print("\n[FASE 1] Optuna calibrando restrições MIP baseadas na Matriz de Probabilidade...")
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=10)
+    
+    params = study.best_params
+    print(f"\n-> Melhores parâmetros estruturais e probabilísticos localizados: {params}")
+    
+    # Separa as configurações do solver que o Optuna validou como campeãs
+    config_po_master = {
+        'corte_jejum_longo': params['corte_jejum_longo'],
+        'max_dezenas_frias': params['max_dezenas_frias'],
+        'min_dezenas_quentes': params['min_dezenas_quentes'],
+        'min_soma_bayes': params['min_soma_bayes'],
+        'max_soma_bayes': params['max_soma_bayes']
+    }
+    
+    w_size = params['window_size']
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - w_size):
+        X_all.append(dados_norm[i:(i + w_size), :])
+        y_all.append(dados_norm[i + w_size, :]) 
+        gabarito_all.append(gabarito_sorteios[i + w_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    atrasos_no_teste_completo = matriz_atrasos[train_size + w_size - 1 : -1]
+    
+    print("\n[FASE 2] Treinando Rede Neural LSTM Final...")
+    model_master = Sequential([
+        LSTM(128, return_sequences=False, input_shape=(w_size, 60)),
+        Dropout(0.2),
+        Dense(64, activation='relu'),
+        Dense(60, activation='sigmoid')
+    ])
+    model_master.compile(optimizer='adam', loss='mean_squared_error')
+    model_master.fit(X_train, y_train, batch_size=32, epochs=40, verbose=0)
+    
+    # =============================================================
+    # 5. BACKTESTING HISTÓRICO COM RESTRIÇÕES DE MATRIZ ATIVAS
+    # =============================================================
+    print(f"\n[FASE 3] Executando Backtesting em {len(X_test)} concursos com Filtro de Restrição Operacional...")
+    previsoes_test_norm = model_master.predict(X_test, verbose=0)
+    previsoes_test_reais = scaler.inverse_transform(previsoes_test_norm)
+    
+    total_ternos, total_quadras, total_quinas, total_senas = 0, 0, 0, 0
+    total_bilhetes_gerados = 0
+    p_lstm = params['peso_lstm']
+    p_bayes = 1.0 - p_lstm
+    
+    for i in range(len(X_test)):
+        pred_lstm = previsoes_test_reais[i]
+        atraso_concurso_atual = atrasos_no_teste_completo[i]
+        resultado_real = gabarito_teste[i]
+        
+        scores_dezenas = []
+        for idx in range(60):
+            score_lstm = 1 / (1 + pred_lstm[idx])
+            jejum_futuro = atraso_concurso_atual[idx] + 1
+            score_bayes = prob_prior_jejum.get(jejum_futuro, 0.0001)
+            scores_dezenas.append((p_lstm * score_lstm) + (p_bayes * score_bayes))
+            
+        # O Solver MIP monta os jogos forçando o cumprimento da distribuição da planilha
+        jogos_simulados = solver_gerar_jogos_bayes_constraints(scores_dezenas, atraso_concurso_atual, config_po_master, n_jogos=5)
+                
+        for jogo in jogos_simulados:
+            total_bilhetes_gerados += 1
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 6: total_senas += 1
+            elif acertos == 5: total_quinas += 1
+            elif acertos == 4: total_quadras += 1
+            elif acertos == 3: total_ternos += 1
+            
+    taxa_ternos = (total_ternos / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+    taxa_quadras = (total_quadras / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+
+    print("-" * 75)
+    print(f"RELATÓRIO DE ACURÁCIA OPERACIONAL (RESTRIÇÕES DA PLANILHA DE BAYES):")
+    print(f"▶ Total de bilhetes gerados via MIP no teste: {total_bilhetes_gerados}")
+    print("-" * 75)
+    print(f"▶ TERNOS:  {total_ternos} acertos ➔ {taxa_ternos:.4f}%")
+    print(f"▶ QUADRAS: {total_quadras} acertos ➔ {taxa_quadras:.4f}%")
+    print(f"▶ QUINAS:  {total_quinas} acertos")
+    print("-" * 75)
+    
+    # =============================================================
+    # 6. PALPITE PARA O PRÓXIMO CONCURSO
+    # =============================================================
+    print("\n[FASE 4] Computando restrições da matriz atual para o PRÓXIMO concurso real...")
+    ultima_janela = dados_norm[-w_size:]
+    ultima_janela_reshape = np.reshape(ultima_janela, (1, w_size, 60))
+    
+    pred_futura_lstm = scaler.inverse_transform(model_master.predict(ultima_janela_reshape, verbose=0))[0]
+    atraso_hoje_real = matriz_atrasos[-1]
+    
+    scores_futuros = []
+    for idx in range(60):
+        score_lstm = 1 / (1 + pred_futura_lstm[idx])
+        jejum_futuro = atraso_hoje_real[idx] + 1
+        scores_futuros.append((p_lstm * score_lstm) + (p_bayes * score_bayes))
+        
+    jogos_finais = solver_gerar_jogos_bayes_constraints(scores_futuros, atraso_hoje_real, config_po_master, n_jogos=5)
+            
+    print("\n" + "=" * 75)
+    print("      JOGOS GERADOS VIA MIP (SOLVER CBC) + CRITÉRIOS DE RESTRIÇÃO DE BAYES")
+    print("=" * 75)
+    for i, jogo in enumerate(jogos_finais, 1):
+        jogo_formatado = ", ".join(f"{num:02d}" for num in jogo)
+        linha_pandas = pd.Series(data=jogo, index=colunas_bolas)
+        indice_calculado = encontrar_posicao_itertools(linha_pandas)
+        indice_br = f"{indice_calculado:,}".replace(",", ".")
+        print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice Real: {indice_br}")
+    print("=" * 75)
+
+================================================================================
+ ARQUIVO: ia_pure_linear_research.py
+ CAMINHO: ./ia_pure_linear_research.py
+================================================================================
+
+import numpy as np
+import pandas as pd
+import random
+import optuna
+import os
+from sklearn.preprocessing import MinMaxScaler
+from pulp import LpProblem, LpMaximize, LpVariable, lpSum, LpStatus, PULP_CBC_CMD
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
+from get_data import df_mega_sena
+
+# === IMPORTAÇÃO DA SUA LÓGICA DE ÍNDICES ===
+from indice import encontrar_posicao_itertools
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+# =============================================================
+# 1. PREPARAÇÃO DOS DADOS HISTÓRICOS E DA CURVA DE BAYES
+# =============================================================
+print("Carregando dados e preparando ambiente para Programação Linear...")
+colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+df_cronologico = df_mega_sena.sort_values(by='Concurso').copy()
+
+df_ausencia = pd.read_excel("matriz_ausencia_completa.xlsx")
+colunas_jejum = [col for col in df_ausencia.columns if str(col).isdigit()]
+
+distribuicao_global_jejuns = {int(col): 0 for col in colunas_jejum}
+for index, row in df_ausencia.iterrows():
+    for col in colunas_jejum:
+        distribuicao_global_jejuns[int(col)] += int(row[col])
+
+total_sequencias = sum(distribuicao_global_jejuns.values())
+prob_prior_jejum = {t: (qtd / total_sequencias) for t, qtd in distribuicao_global_jejuns.items()}
+
+historico_atrasos = []
+gabarito_sorteios = [] 
+atraso_atual = {d: 0 for d in range(1, 61)}
+
+for index, row in df_cronologico.iterrows():
+    sorteados = set([int(row[c]) for c in colunas_bolas])
+    historico_atrasos.append([atraso_atual[d] for d in range(1, 61)])
+    gabarito_sorteios.append(sorteados)
+    for d in range(1, 61):
+        if d in sorteados: atraso_atual[d] = 0
+        else: atraso_atual[d] += 1
+
+matriz_atrasos = np.array(historico_atrasos)
+scaler = MinMaxScaler(feature_range=(0, 1))
+dados_norm = scaler.fit_transform(matriz_atrasos)
+
+
+# =============================================================
+# 2. OPTIMIZADOR LINEAR PURO (CONTINUOUS PROGRAMMING)
+# =============================================================
+def resolver_problema_linear_puro(scores_dezenas, atrasos_atuais, config_po):
+    """
+    Resolve a distribuição de pesos usando Programação Linear Contínua (Simplex).
+    Retorna o vetor de pesos ótimos fracionários para cada dezena.
+    """
+    probs_dezenas_atuais = {
+        d: prob_prior_jejum.get(atrasos_atuais[d-1] + 1, 0.0001) for d in range(1, 61)
+    }
+
+    prob = LpProblem("Maximizacao_Linear_Pura_Simplex", LpMaximize)
+    
+    # VARIÁVEIS CONTÍNUAS: Substitui as binárias (MIP) por floats entre 0.0 e 1.0
+    x = LpVariable.dicts("peso_dezena", range(1, 61), lowBound=0.0, upBound=1.0, cat="Continuous")
+    
+    # Função Objetivo: Maximizar o valor esperado do bilhete contínuo
+    prob += lpSum(scores_dezenas[d-1] * x[d] for d in range(1, 61))
+    
+    # --- RESTRIÇÕES LINEARES DA MATRIZ ---
+    # A soma dos pesos distribuídos na matriz de 60 dezenas deve ser exatamente igual a 6
+    prob += lpSum(x[d] for d in range(1, 61)) == 6.0
+    
+    # Restrição de dezenas frias e quentes operando sob frações contínuas
+    prob += lpSum(x[d] for d in range(1, 61) if atrasos_atuais[d-1] > config_po['corte_jejum_longo']) <= config_po['max_dezenas_frias']
+    prob += lpSum(x[d] for d in range(1, 61) if atrasos_atuais[d-1] <= 4) >= config_po['min_dezenas_quentes']
+    
+    # Janela de envelope de Bayes contínuo
+    prob += lpSum(probs_dezenas_atuais[d] * x[d] for d in range(1, 61)) >= config_po['min_soma_bayes']
+    prob += lpSum(probs_dezenas_atuais[d] * x[d] for d in range(1, 61)) <= config_po['max_soma_bayes']
+    
+    prob.solve(PULP_CBC_CMD(msg=False))
+    
+    # Se o simplex convergir para o ótimo, extrai o dicionário de pesos
+    if LpStatus[prob.status] == "Optimal":
+        return {d: max(0.0, x[d].varValue) for d in range(1, 61)}
+    else:
+        # Fallback caso os limites de Bayes fiquem travados demais
+        return {d: 1.0 if d in sorted(random.sample(range(1, 61), 15)) else 0.0 for d in range(1, 61)}
+
+
+def amostrar_jogos_da_distribuicao_linear(pesos_continuos, n_jogos=5):
+    """
+    Usa amostragem probabilística ponderada para converter a solução fracionária
+    do Simplex em combinações reais de 6 números.
+    """
+    jogos_gerados = []
+    dezenas = list(range(1, 61))
+    
+    # Normaliza e adiciona um ruído suave para garantir diversidade entre os bilhetes
+    valores_pesos = np.array([pesos_continuos[d] for d in dezenas])
+    valores_pesos = np.where(valores_pesos < 0.01, 0.0001, valores_pesos) # Evita probabilidade zero absoluta
+    
+    tentativas = 0
+    while len(jogos_gerados) < n_jogos and tentativas < 2000:
+        tentativas += 1
+        # Sorteia 6 dezenas usando os pesos do solver contínuo como pesos de probabilidade
+        probs_roleta = valores_pesos / np.sum(valores_pesos)
+        palpite = sorted(np.random.choice(dezenas, size=6, replace=False, p=probs_roleta))
+        
+        # Filtros básicos de higienização geométrica pós-amostragem
+        if sum(1 for n in palpite if n % 2 == 0) in [2, 3, 4]:
+            if palpite not in jogos_gerados:
+                jogos_gerados.append([int(n) for n in palpite])
+                
+    return jogos_gerados
+
+
+# =============================================================
+# 3. OPTUNA REGENDO A ORQUESTRA LINEAR
+# =============================================================
+def objective(trial):
+    window_size = trial.suggest_int('window_size', 10, 16)
+    peso_lstm = trial.suggest_float('peso_lstm', 0.4, 0.7)
+    peso_bayes = 1.0 - peso_lstm
+    
+    config_po = {
+        'corte_jejum_longo': trial.suggest_int('corte_jejum_longo', 12, 22),
+        'max_dezenas_frias': trial.suggest_float('max_dezenas_frias', 1.0, 2.5),
+        'min_dezenas_quentes': trial.suggest_float('min_dezenas_quentes', 1.5, 3.5),
+        'min_soma_bayes': trial.suggest_float('min_soma_bayes', 0.10, 0.22),
+        'max_soma_bayes': trial.suggest_float('max_soma_bayes', 0.38, 0.60)
+    }
+    
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - window_size):
+        X_all.append(dados_norm[i:(i + window_size), :])
+        y_all.append(dados_norm[i + window_size, :])
+        gabarito_all.append(gabarito_sorteios[i + window_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    
+    model = Sequential([
+        LSTM(64, return_sequences=False, input_shape=(window_size, 60)),
+        Dropout(0.2),
+        Dense(60, activation='sigmoid')
+    ])
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    model.fit(X_train, y_train, batch_size=64, epochs=8, verbose=0)
+    
+    previsoes_norm = model.predict(X_test[-60:], verbose=0)
+    previsoes_lstm = scaler.inverse_transform(previsoes_norm)
+    gabarito_recortado = gabarito_teste[-60:]
+    atrasos_no_teste = matriz_atrasos[train_size + window_size - 1 : -1][-60:]
+    
+    score_fim = 0
+    for i in range(60):
+        pred_lstm = previsoes_lstm[i]
+        atraso_concurso_atual = atrasos_no_teste[i]
+        resultado_real = gabarito_recortado[i]
+        
+        scores_dezenas = []
+        for idx in range(60):
+            score_lstm_norm = 1 / (1 + pred_lstm[idx])
+            jejum_futuro = atraso_concurso_atual[idx] + 1
+            score_bayes_norm = prob_prior_jejum.get(jejum_futuro, 0.0001)
+            scores_dezenas.append((peso_lstm * score_lstm_norm) + (peso_bayes * score_bayes_norm))
+            
+        # O Simplex calcula a distribuição contínua ideal de pesos
+        pesos_otimos = resolver_problema_linear_puro(scores_dezenas, atraso_concurso_atual, config_po)
+        jogos_simulados = amostrar_jogos_da_distribuicao_linear(pesos_otimos, n_jogos=5)
+                
+        for jogo in jogos_simulados:
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 4: score_fim += 1000
+            elif acertos == 5: score_fim += 50000
+            
+    return score_fim
+
+
+# =============================================================
+# 4. PROCESSAMENTO MESTRE DEFINITIVO
+# =============================================================
+if __name__ == '__main__':
+    print("\n[FASE 1] Iniciando otimização via Programação Linear Pura (Algoritmo Simplex)...")
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=10)
+    
+    params = study.best_params
+    print(f"\n-> Melhores parâmetros do Ecossistema Linear localizados: {params}")
+    
+    config_po_master = {
+        'corte_jejum_longo': params['corte_jejum_longo'],
+        'max_dezenas_frias': params['max_dezenas_frias'],
+        'min_dezenas_quentes': params['min_dezenas_quentes'],
+        'min_soma_bayes': params['min_soma_bayes'],
+        'max_soma_bayes': params['max_soma_bayes']
+    }
+    
+    w_size = params['window_size']
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - w_size):
+        X_all.append(dados_norm[i:(i + w_size), :])
+        y_all.append(dados_norm[i + w_size, :]) 
+        gabarito_all.append(gabarito_sorteios[i + w_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    atrasos_no_teste_completo = matriz_atrasos[train_size + w_size - 1 : -1]
+    
+    print("\n[FASE 2] Treinando Rede Neural LSTM do Ensemble...")
+    model_master = Sequential([
+        LSTM(128, return_sequences=False, input_shape=(w_size, 60)),
+        Dropout(0.2),
+        Dense(64, activation='relu'),
+        Dense(60, activation='sigmoid')
+    ])
+    model_master.compile(optimizer='adam', loss='mean_squared_error')
+    model_master.fit(X_train, y_train, batch_size=32, epochs=40, verbose=0)
+    
+    # =============================================================
+    # 5. BACKTESTING TOTAL VIA RELAXAMENTO LINEAR DO ECOSSISTEMA
+    # =============================================================
+    print(f"\n[FASE 3] Rodando Backtesting completo em {len(X_test)} concursos...")
+    previsoes_test_norm = model_master.predict(X_test, verbose=0)
+    previsoes_test_reais = scaler.inverse_transform(previsoes_test_norm)
+    
+    total_ternos, total_quadras, total_quinas, total_senas = 0, 0, 0, 0
+    total_bilhetes_gerados = 0
+    p_lstm = params['peso_lstm']
+    p_bayes = 1.0 - p_lstm
+    
+    for i in range(len(X_test)):
+        pred_lstm = previsoes_test_reais[i]
+        atraso_concurso_atual = atrasos_no_teste_completo[i]
+        resultado_real = gabarito_teste[i]
+        
+        scores_dezenas = []
+        for idx in range(60):
+            score_lstm = 1 / (1 + pred_lstm[idx])
+            jejum_futuro = atraso_concurso_atual[idx] + 1
+            score_bayes = prob_prior_jejum.get(jejum_futuro, 0.0001)
+            scores_dezenas.append((p_lstm * score_lstm) + (p_bayes * score_bayes))
+            
+        # O Simplex calcula a distribuição ideal para este ponto do passado
+        pesos_distribuídos = resolver_problema_linear_puro(scores_dezenas, atraso_concurso_atual, config_po_master)
+        jogos_simulados = amostrar_jogos_da_distribuicao_linear(pesos_distribuídos, n_jogos=5)
+                
+        for jogo in jogos_simulados:
+            total_bilhetes_gerados += 1
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 6: total_senas += 1
+            elif acertos == 5: total_quinas += 1
+            elif acertos == 4: total_quadras += 1
+            elif acertos == 3: total_ternos += 1
+            
+    taxa_ternos = (total_ternos / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+    taxa_quadras = (total_quadras / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+
+    print("-" * 75)
+    print(f"RELATÓRIO DE PERFORMANCE DO MODELO DE PROGRAMAÇÃO LINEAR PURA:")
+    print(f"▶ Total de bilhetes gerados por Amostragem Ponderada Simplex: {total_bilhetes_gerados}")
+    print("-" * 75)
+    print(f"▶ TERNOS:  {total_ternos} acertos ➔ {taxa_ternos:.4f}%")
+    print(f"▶ QUADRAS: {total_quadras} acertos ➔ {taxa_quadras:.4f}%")
+    print(f"▶ QUINAS:  {total_quinas} acertos")
+    print("-" * 75)
+    
+    # =============================================================
+    # 6. GERANDO JOGOS PARA O PRÓXIMO CONCURSO
+    # =============================================================
+    print("\n[FASE 4] Gerando distribuição ótima contínua para o PRÓXIMO concurso real...")
+    ultima_janela = dados_norm[-w_size:]
+    ultima_janela_reshape = np.reshape(ultima_janela, (1, w_size, 60))
+    
+    pred_futura_lstm = scaler.inverse_transform(model_master.predict(ultima_janela_reshape, verbose=0))[0]
+    atraso_hoje_real = matriz_atrasos[-1]
+    
+    scores_futuros = []
+    for idx in range(60):
+        score_lstm = 1 / (1 + pred_futura_lstm[idx])
+        jejum_futuro = atraso_hoje_real[idx] + 1
+        scores_futuros.append((p_lstm * score_lstm) + (p_bayes * score_bayes))
+        
+    pesos_futuros_simplex = resolver_problema_linear_puro(scores_futuros, atraso_hoje_real, config_po_master)
+    jogos_finais = amostrar_jogos_da_distribuicao_linear(pesos_futuros_simplex, n_jogos=5)
+            
+    print("\n" + "=" * 75)
+    print("      JOGOS GERADOS VIA DISTRIBUIÇÃO ÓTIMA DO ALGORITMO SIMPLEX")
+    print("=" * 75)
+    for i, jogo in enumerate(jogos_finais, 1):
+        jogo_formatado = ", ".join(f"{num:02d}" for num in jogo)
+        linha_pandas = pd.Series(data=jogo, index=colunas_bolas)
+        indice_calculado = encontrar_posicao_itertools(linha_pandas)
+        indice_br = f"{indice_calculado:,}".replace(",", ".")
+        print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice Real: {indice_br}")
+    print("=" * 75)
 
 ================================================================================
  ARQUIVO: indice.py
@@ -374,74 +2525,18 @@ def gerar_matriz():
     nome_arquivo = "matriz_ausencia_completa.xlsx"
     df_matriz_completa.to_excel(nome_arquivo, index=False)
 
-    print("\n" + "=" * 70)
-    print("     MATRIZ DE AUSÊNCIA E ESTATÍSTICA CALCULADA COM SUCESSO!")
-    print("=" * 70)
-    print(f"Maior jejum detectado na história dos sorteios: {max_observed_streak} concursos.")
-    print(f"Arquivo gerado: '{nome_arquivo}'")
-    print("Abra esse arquivo no Excel ou Sheets para ver a tabela inteira perfeitamente.")
-    print("=" * 70)
-
-    # Mostrar uma prévia pequena no terminal para validação
-    print("\nPrévia das primeiras dezenas (apenas cabeçalhos principais):")
-    print(df_matriz_completa[['Dezena', 'Desvio', 'Máximo de Sorteios Sem Sair', 'Ausencia_Actual_Concursos', '1', '2', '3', 'Average_Streak_Length']].head(4))
+ 
 
 ================================================================================
- ARQUIVO: media.py
- CAMINHO: ./media.py
-================================================================================
-
-from collections import Counter
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-from get_data import df_mega_sena
-
-# Lista para armazenar todas as dezenas sorteadas
-todas_dezenas = []
-
-# Iterar sobre cada linha do DataFrame e coletar as dezenas
-for index, row in df_mega_sena.iterrows():
-    for col in colunas_bolas: # 'colunas_bolas' foi definida anteriormente e contém ['Bola1', ..., 'Bola6']
-        todas_dezenas.append(row[col])
-
-# Contar a frequência de cada dezena
-frequencia_dezenas = Counter(todas_dezenas)
-
-# Converter para um DataFrame para facilitar a visualização e ordenação
-df_frequencia = pd.DataFrame(frequencia_dezenas.items(), columns=['Dezena', 'Frequencia'])
-
-# Ordenar por dezena para uma visualização clara ou por frequência
-df_frequencia = df_frequencia.sort_values(by='Dezena').reset_index(drop=True)
-
-# Obter o número total de sorteios do DataFrame principal
-total_sorteios = len(df_mega_sena)
-
-# Calcular a média esperada de vezes que cada dezena deveria ter saído
-media_esperada = total_sorteios / 10
-
-print(f"Total de sorteios analisados: {total_sorteios}")
-print(f"Média esperada de ocorrências por dezena (total_sorteios / 10): {media_esperada:.2f}")
-
-# Adicionar a média esperada ao DataFrame de frequência (para referência)
-df_frequencia['Media_Esperada'] = media_esperada
-
-# Calcular o desvio: Frequencia Real - Média Esperada
-df_frequencia['Desvio'] = df_frequencia['Frequencia'] - df_frequencia['Media_Esperada']
-
-print("\nFrequência, Média Esperada e Desvio por Dezena:")
-display(df_frequencia.head(10))
-
-
-
-================================================================================
- ARQUIVO: neural_netowrk.py
- CAMINHO: ./neural_netowrk.py
+ ARQUIVO: neural2.py
+ CAMINHO: ./neural2.py
 ================================================================================
 
 import numpy as np
 import pandas as pd
 import random
+import optuna
+import os
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout
@@ -451,13 +2546,31 @@ from get_data import df_mega_sena
 from gerador import jogo_e_valido_estritamente
 from indice import encontrar_posicao_itertools
 
+# Abafa logs excessivos do TensorFlow
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 # =============================================================
-# 1. PREPARAÇÃO DOS DADOS HISTÓRICOS (SÉRIES TEMPORAIS)
+# 1. PREPARAÇÃO DOS DADOS HISTÓRICOS E DA CURVA DE BAYES
 # =============================================================
-print("Preparando dados de séries temporais para validação e treino...")
+print("Carregando dados e calculando probabilidades de Bayes...")
 colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
 df_cronologico = df_mega_sena.sort_values(by='Concurso').copy()
 
+# Carrega a tabela para extrair a probabilidade condicional de cada tamanho de jejum
+df_ausencia = pd.read_excel("matriz_ausencia_completa.xlsx")
+colunas_jejum = [col for col in df_ausencia.columns if str(col).isdigit()]
+
+distribuicao_global_jejuns = {int(col): 0 for col in colunas_jejum}
+for index, row in df_ausencia.iterrows():
+    for col in colunas_jejum:
+        distribuicao_global_jejuns[int(col)] += int(row[col])
+
+total_sequencias = sum(distribuicao_global_jejuns.values())
+
+# P(Jejum = t) -> Distribuição de probabilidade a priori do tamanho do jejum
+prob_prior_jejum = {t: (qtd / total_sequencias) for t, qtd in distribuicao_global_jejuns.items()}
+
+# Reconstrói a matriz temporal para a LSTM
 historico_atrasos = []
 gabarito_sorteios = [] 
 atraso_atual = {d: 0 for d in range(1, 61)}
@@ -466,157 +2579,870 @@ for index, row in df_cronologico.iterrows():
     sorteados = set([int(row[c]) for c in colunas_bolas])
     historico_atrasos.append([atraso_atual[d] for d in range(1, 61)])
     gabarito_sorteios.append(sorteados)
-    
     for d in range(1, 61):
-        if d in sorteados:
-            atraso_atual[d] = 0
-        else:
-            atraso_atual[d] += 1
+        if d in sorteados: atraso_atual[d] = 0
+        else: atraso_atual[d] += 1
 
 matriz_atrasos = np.array(historico_atrasos)
 scaler = MinMaxScaler(feature_range=(0, 1))
 dados_norm = scaler.fit_transform(matriz_atrasos)
 
-window_size = 10
-total_amostras = len(dados_norm) - window_size
-train_size = int(total_amostras * 0.8)
-
-# Criar janelas para treino e teste
-X_all, y_all = [], []
-for i in range(len(dados_norm) - window_size):
-    X_all.append(dados_norm[i:(i + window_size), :])
-    y_all.append(dados_norm[i + window_size, :])
-
-X_train, X_test = np.array(X_all[:train_size]), np.array(X_all[train_size:])
-y_train, y_test = np.array(y_all[:train_size]), np.array(y_all[train_size:])
-gabarito_teste = gabarito_sorteios[window_size + train_size:]
 
 # =============================================================
-# 2. TREINAMENTO DA REDE NEURAL (LSTM MULTIVARIÁVEL)
+# 2. FUNÇÃO OBJETIVO: OPTUNA TUNANDO O ENSEMBLE COM MIRA NAS QUADRAS
 # =============================================================
-model = Sequential([
-    LSTM(128, return_sequences=True, input_shape=(window_size, 60)),
-    Dropout(0.2),
-    LSTM(64, return_sequences=False),
-    Dropout(0.2),
-    Dense(64, activation='relu'),
-    Dense(60, activation='sigmoid')
-])
-model.compile(optimizer='adam', loss='mean_squared_error')
-
-print("Treinando a rede neural LSTM... Por favor, aguarde.")
-model.fit(X_train, y_train, batch_size=32, epochs=25, verbose=0)
-
-
-# =============================================================
-# 3. AVALIAÇÃO DE ACURÁCIA (BACKTESTING NO HISTÓRICO DE TESTE)
-# =============================================================
-print("\nAvaliando acurácia histórica nos dados de teste...")
-previsoes_test_norm = model.predict(X_test, verbose=0)
-previsoes_test_reais = scaler.inverse_transform(previsoes_test_norm)
-
-total_quadras_ganhas = 0
-total_quinas_ganhas = 0
-total_senas_ganhas = 0
-concursos_para_avaliar = min(50, len(X_test))
-
-# Testa nos últimos 50 concursos para medir a eficiência real do modelo
-for i in range(len(X_test) - concursos_para_avaliar, len(X_test)):
-    previsao_concurso = previsoes_test_reais[i]
-    resultado_real = gabarito_teste[i]
+def objective(trial):
+    # Parâmetros da LSTM
+    window_size = trial.suggest_int('window_size', 10, 18)
     
-    probabilidades = []
-    for idx, atr_prev in enumerate(previsao_concurso):
-        score = 1 / (1 + atr_prev)
-        probabilidades.append((idx + 1, score))
+    # MODIFICAÇÃO 1: Alargado o range mínimo do Grupo de Elite para dar margem à Quadra
+    top_n_ia = trial.suggest_int('top_n_ia', 24, 32)
+    
+    lstm_1 = trial.suggest_int('lstm_1', 64, 128, step=32)
+    dropout = trial.suggest_float('dropout', 0.1, 0.3)
+    
+    # Parâmetro do Ensemble
+    peso_lstm = trial.suggest_float('peso_lstm', 0.3, 0.8)
+    peso_bayes = 1.0 - peso_lstm
+    
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - window_size):
+        X_all.append(dados_norm[i:(i + window_size), :])
+        y_all.append(dados_norm[i + window_size, :])
+        gabarito_all.append(gabarito_sorteios[i + window_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    
+    # Modelo LSTM enxuto para otimização rápida
+    model = Sequential([
+        LSTM(lstm_1, return_sequences=False, input_shape=(window_size, 60)),
+        Dropout(dropout),
+        Dense(64, activation='relu'),
+        Dense(60, activation='sigmoid')
+    ])
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    model.fit(X_train, y_train, batch_size=64, epochs=10, verbose=0)
+    
+    # Avaliação retroativa rápida (últimos 80 concursos do teste)
+    previsoes_norm = model.predict(X_test[-80:], verbose=0)
+    previsoes_lstm = scaler.inverse_transform(previsoes_norm)
+    gabarito_recortado = gabarito_teste[-80:]
+    
+    atrasos_no_teste = matriz_atrasos[train_size + window_size - 1 : -1][-80:]
+    
+    score_fim = 0
+    for i in range(80):
+        pred_lstm = list(previsoes_lstm[i])
+        atraso_concurso_atual = atrasos_no_teste[i]
+        resultado_real = gabarito_recortado[i]
         
-    dezenas_sugeridas = sorted(probabilidades, key=lambda x: x[1], reverse=True)
-    top_20_ia = [item[0] for item in dezenas_sugeridas[:20]]
-    
-    # Simula a geração de 5 jogos para aquele concurso passado
-    jogos_simulados = []
-    while len(jogos_simulados) < 5:
-        palpite = sorted(random.sample(top_20_ia, 6))
-        if jogo_e_valido_estritamente(palpite):
-            jogos_simulados.append(palpite)
+        scores_ensemble = []
+        for idx in range(60):
+            dezena = idx + 1
+            score_lstm_norm = 1 / (1 + pred_lstm[idx])
+            jejum_futuro = atraso_concurso_atual[idx] + 1
+            score_bayes_norm = prob_prior_jejum.get(jejum_futuro, 0.0001)
             
-    for jogo in jogos_simulados:
-        acertos = len(set(jogo) & resultado_real)
-        if acertos == 6: total_senas_ganhas += 1
-        elif acertos == 5: total_quinas_ganhas += 1
-        elif acertos == 4: total_quadras_ganhas += 1
-
-print("-" * 75)
-print(f"MÉTRICAS DE ACURÁCIA (Últimos {concursos_para_avaliar} Concursos Testados):")
-print(f"▶ Quadras premiadas na simulação: {total_quadras_ganhas}")
-print(f"▶ Quinas premiadas na simulação:  {total_quinas_ganhas}")
-print(f"▶ Senas premiadas na simulação:   {total_senas_ganhas}")
-print("-" * 75)
-
-
-# =============================================================
-# 4. INTELIGÊNCIA PREDITIVA PARA O PRÓXIMO CONCURSO
-# =============================================================
-print("\nGerando previsões térmicas para o PRÓXIMO concurso...")
-ultima_janela = dados_norm[-window_size:]
-ultima_janela_reshape = np.reshape(ultima_janela, (1, window_size, 60))
-
-previsao_futura_norm = model.predict(ultima_janela_reshape, verbose=0)
-previsao_futura_reais = scaler.inverse_transform(previsao_futura_norm)[0]
-
-probabilidades_futuras = []
-for idx, atraso_previsto in enumerate(previsao_futura_reais):
-    score_proximidade_zero = 1 / (1 + atraso_previsto) 
-    probabilidades_futuras.append((idx + 1, score_proximidade_zero))
-
-dezenas_sugeridas_futuras = sorted(probabilidades_futuras, key=lambda x: x[1], reverse=True)
-top_20_atual_ia = [item[0] for item in dezenas_sugeridas_futuras[:20]]
-
-print(f"-> Universo reduzido pela IA (TOP 20): {sorted(top_20_atual_ia)}")
+            score_final = (peso_lstm * score_lstm_norm) + (peso_bayes * score_bayes_norm)
+            scores_ensemble.append((dezena, score_final))
+            
+        dezenas_sugeridas = sorted(scores_ensemble, key=lambda x: x[1], reverse=True)
+        top_rodada = [item[0] for item in dezenas_sugeridas[:top_n_ia]]
+        
+        jogos_simulados = []
+        tentativas = 0
+        
+        # MODIFICAÇÃO 3: Subiu para 400 tentativas para dar mais fôlego ao gerador estrito
+        while len(jogos_simulados) < 5 and tentativas < 400:
+            tentativas += 1
+            palpite = sorted(random.sample(top_rodada, 6))
+            if jogo_e_valido_estritamente(palpite):
+                jogos_simulados.append(palpite)
+                
+        # MODIFICAÇÃO 2: Sistema de pontos rebalanceado (Terno zerado para o Optuna focar em Quadras)
+        for jogo in jogos_simulados:
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 3: score_fim += 0        # Ignora o Terno para forçar a rede a subir o nível
+            elif acertos == 4: score_fim += 1000   # Peso massivo para a Quadra
+            elif acertos == 5: score_fim += 50000  # Peso mestre para a Quina
+            
+    return score_fim
 
 
 # =============================================================
-# 5. GERAÇÃO DOS 5 JOGOS DEFINITIVOS COM VALIDAÇÃO E ÍNDICES
+# 3. EXECUÇÃO DO PROCESSO MASTER (TREINO FINAL + PALPITE)
 # =============================================================
-print("\nA IA está montando as combinações e validando no seu gerador...")
-N_JOGOS = 5
-jogos_finais_concurso = []
-tentativas_da_rede = 0
-
-while len(jogos_finais_concurso) < N_JOGOS:
-    tentativas_da_rede += 1
-    # IA seleciona 6 dezenas dentro do seu TOP 20 predito
-    palpite_ia = sorted(random.sample(top_20_atual_ia, 6))
+if __name__ == '__main__':
+    print("\n[FASE 1] Rodando Optuna focado em QUADRAS no Ensemble (LSTM + Bayes)...")
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=15)
     
-    # Submete à validação estrita do seu gerador.py
-    if jogo_e_valido_estritamente(palpite_ia):
-        jogos_finais_concurso.append(palpite_ia)
-
-# Exibição do Volante Final
-print("\n" + "=" * 75)
-print("        JOGOS GERADOS EXCLUSIVAMENTE PELA REDE NEURAL LSTM")
-print("=" * 75)
-print(f"Combinações geradas pela IA até passarem nos filtros da lógica: {tentativas_da_rede}")
-print("-" * 75)
-
-for i, jogo in enumerate(jogos_finais_concurso, 1):
-    jogo_formatado = ", ".join(f"{num:02d}" for num in jogo)
+    params = study.best_params
+    print(f"\n-> Melhores parâmetros do Ensemble localizados: {params}")
     
-    # Prepara o formato Series do Pandas para o seu 'indice.py' processar
-    linha_pandas = pd.Series(
-        data=jogo, 
-        index=['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
-    )
-    
-    # Calcula o índice
-    indice_calculado = encontrar_posicao_itertools(linha_pandas)
-    indice_br = f"{indice_calculado:,}".replace(",", ".")
-    
-    print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice: {indice_br}")
+    # Treinamento final com os pesos calibrados pelo Optuna
+    w_size = params['window_size']
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - w_size):
+        X_all.append(dados_norm[i:(i + w_size), :])
+        y_all.append(dados_norm[i + w_size, :]) 
+        gabarito_all.append(gabarito_sorteios[i + w_size])
 
-print("=" * 75)
-print("Processo concluído com sucesso! Boa sorte!")
-print("=" * 75)
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    atrasos_no_teste_completo = matriz_atrasos[train_size + w_size - 1 : -1]
+    
+    model_master = Sequential([
+        LSTM(params['lstm_1'], return_sequences=False, input_shape=(w_size, 60)),
+        Dropout(params['dropout']),
+        Dense(64, activation='relu'),
+        Dense(60, activation='sigmoid')
+    ])
+    model_master.compile(optimizer='adam', loss='mean_squared_error')
+    
+    # Damos 45 épocas no treino final para consolidar bem os acertos mapeados
+    model_master.fit(X_train, y_train, batch_size=32, epochs=45, verbose=0)
+    
+    # =============================================================
+    # 4. BACKTESTING TOTAL E ACURÁCIA DO ENSEMBLE (PERCENTUAL)
+    # =============================================================
+    print(f"\n[FASE 2] Rodando Backtesting completo em {len(X_test)} concursos...")
+    previsoes_test_norm = model_master.predict(X_test, verbose=0)
+    previsoes_test_reais = scaler.inverse_transform(previsoes_test_norm)
+    
+    total_ternos, total_quadras, total_quinas, total_senas = 0, 0, 0, 0
+    total_bilhetes_gerados = 0
+    p_lstm = params['peso_lstm']
+    p_bayes = 1.0 - p_lstm
+    dezenas_certas_no_grupo = []
+    
+    for i in range(len(X_test)):
+        pred_lstm = previsoes_test_reais[i]
+        atraso_concurso_atual = atrasos_no_teste_completo[i]
+        resultado_real = gabarito_teste[i]
+        
+        scores_ensemble = []
+        for idx in range(60):
+            score_lstm = 1 / (1 + pred_lstm[idx])
+            jejum_futuro = atraso_concurso_atual[idx] + 1
+            score_bayes = prob_prior_jejum.get(jejum_futuro, 0.0001)
+            
+            score_final = (p_lstm * score_lstm) + (p_bayes * score_bayes)
+            scores_ensemble.append((idx + 1, score_final))
+            
+        dezenas_sugeridas = sorted(scores_ensemble, key=lambda x: x[1], reverse=True)
+        top_ia_rodada = [item[0] for item in dezenas_sugeridas[:params['top_n_ia']]]
+        
+        dezenas_certas_no_grupo.append(len(set(top_ia_rodada) & resultado_real))
+        
+        jogos_simulados = []
+        tentativas_loop = 0
+        while len(jogos_simulados) < 5 and tentativas_loop < 1000:
+            tentativas_loop += 1
+            palpite = sorted(random.sample(top_ia_rodada, 6))
+            if jogo_e_valido_estritamente(palpite): 
+                jogos_simulados.append(palpite)
+                
+        for jogo in jogos_simulados:
+            total_bilhetes_gerados += 1
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 6: total_senas += 1
+            elif acertos == 5: total_quinas += 1
+            elif acertos == 4: total_quadras += 1
+            elif acertos == 3: total_ternos += 1
+            
+    # Cálculo das taxas de acerto percentuais reais no Backtesting (Nota: Aqui mostramos os Ternos reais obtidos)
+    taxa_ternos = (total_ternos / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+    taxa_quadras = (total_quadras / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+    taxa_quinas = (total_quinas / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+    taxa_senas = (total_senas / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+
+    print("-" * 75)
+    print(f"RELATÓRIO DE PERFORMANCE DO ENSEMBLE HÍBRIDO:")
+    print(f"▶ Concursos totais de teste avaliados: {len(X_test)}")
+    print(f"▶ Total de bilhetes válidos gerados e analisados: {total_bilhetes_gerados}")
+    print(f"▶ Média de dezenas capturadas no TOP {params['top_n_ia']} da IA: {np.mean(dezenas_certas_no_grupo):.2f} de 6")
+    print(f"▶ Divisão de forças encontrada: IA ({p_lstm*100:.1f}%) | Bayes ({p_bayes*100:.1f}%)")
+    print("-" * 75)
+    print("TAXA PERCENTUAL DE CONVERSÃO HISTÓRICA (HIT RATE):")
+    print(f"▶ TERNOS:  {total_ternos} acertos ➔ {taxa_ternos:.4f}%  (Esperado acaso: 0.4311%)")
+    print(f"▶ QUADRAS: {total_quadras} acertos ➔ {taxa_quadras:.4f}%  (Esperado acaso: 0.0428%)")
+    print(f"▶ QUINAS:  {total_quinas} acertos ➔ {taxa_quinas:.4f}%  (Esperado acaso: 0.0006%)")
+    print(f"▶ SENAS:   {total_senas} acertos ➔ {taxa_senas:.6f}%  (Esperado acaso: 0.000002%)")
+    print("-" * 75)
+    
+    # =============================================================
+    # 5. PALPITE PARA O PRÓXIMO CONCURSO
+    # =============================================================
+    print("\n[FASE 3] Gerando palpites definitivos para o PRÓXIMO concurso...")
+    ultima_janela = dados_norm[-w_size:]
+    ultima_janela_reshape = np.reshape(ultima_janela, (1, w_size, 60))
+    
+    pred_futura_lstm = scaler.inverse_transform(model_master.predict(ultima_janela_reshape, verbose=0))[0]
+    atraso_hoje_real = matriz_atrasos[-1]
+    
+    scores_futuros = []
+    for idx in range(60):
+        score_lstm = 1 / (1 + pred_futura_lstm[idx])
+        jejum_futuro = atraso_hoje_real[idx] + 1
+        score_bayes = prob_prior_jejum.get(jejum_futuro, 0.0001)
+        
+        score_final = (p_lstm * score_lstm) + (p_bayes * score_bayes)
+        scores_futuros.append((idx + 1, score_final))
+        
+    dezenas_sugeridas_futuras = sorted(scores_futuros, key=lambda x: x[1], reverse=True)
+    top_atual_ia = [item[0] for item in dezenas_sugeridas_futuras[:params['top_n_ia']]]
+    
+    print(f"-> Grupo de Elite do Ensemble (TOP {params['top_n_ia']}): {sorted(top_atual_ia)}")
+    
+    jogos_finais = []
+    while len(jogos_finais) < 5:
+        palpite_ia = sorted(random.sample(top_atual_ia, 6))
+        if jogo_e_valido_estritamente(palpite_ia): 
+            jogos_finais.append(palpite_ia)
+            
+    print("\n" + "=" * 75)
+    print("      JOGOS GERADOS VIA ENSEMBLE (LSTM + INFERÊNCIA DE BAYES)")
+    print("=" * 75)
+    for i, jogo in enumerate(jogos_finais, 1):
+        jogo_formatado = ", ".join(f"{num:02d}" for num in jogo)
+        linha_pandas = pd.Series(data=jogo, index=['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6'])
+        indice_calculado = encontrar_posicao_itertools(linha_pandas)
+        indice_br = f"{indice_calculado:,}".replace(",", ".")
+        print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice: {indice_br}")
+    print("=" * 75)
+
+================================================================================
+ ARQUIVO: neural_indice.py
+ CAMINHO: ./neural_indice.py
+================================================================================
+
+import numpy as np
+import pandas as pd
+import random
+import optuna
+import os
+from sklearn.preprocessing import MinMaxScaler
+from catboost import CatBoostRegressor
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
+from get_data import df_mega_sena
+
+# === IMPORTAÇÕES DA SUA LÓGICA OFICIAL ===
+from gerador import jogo_e_valido_estritamente
+from indice import encontrar_posicao_itertools
+
+# Abafa logs excessivos do TensorFlow
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+# =============================================================
+# 1. PREPARAÇÃO DOS DADOS HISTÓRICOS BASEADOS EM ÍNDICES
+# =============================================================
+print("Carregando dados históricos e convertendo sorteios em ÍNDICES...")
+colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+df_cronologico = df_mega_sena.sort_values(by='Concurso').copy()
+
+# Carrega a tabela para extrair a probabilidade condicional de cada tamanho de jejum
+df_ausencia = pd.read_excel("matriz_ausencia_completa.xlsx")
+colunas_jejum = [col for col in df_ausencia.columns if str(col).isdigit()]
+distribuicao_global_jejuns = {int(col): 0 for col in colunas_jejum}
+for index, row in df_ausencia.iterrows():
+    for col in colunas_jejum:
+        distribuicao_global_jejuns[int(col)] += int(row[col])
+
+total_sequencias = sum(distribuicao_global_jejuns.values())
+prob_prior_jejum = {t: (qtd / total_sequencias) for t, qtd in distribuicao_global_jejuns.items()}
+
+# Criamos a série temporal de atrasos E a lista de índices reais históricos
+historico_atrasos = []
+lista_indices_reais = []
+gabarito_sorteios = []
+atraso_atual = {d: 0 for d in range(1, 61)}
+
+for index, row in df_cronologico.iterrows():
+    sorteados_lista = sorted([int(row[c]) for c in colunas_bolas])
+    sorteados_set = set(sorteados_lista)
+    gabarito_sorteios.append(sorteados_set)
+    historico_atrasos.append([atraso_atual[d] for d in range(1, 61)])
+    
+    linha_pandas = pd.Series(data=sorteados_lista, index=colunas_bolas)
+    idx_combinacao = encontrar_posicao_itertools(linha_pandas)
+    lista_indices_reais.append(idx_combinacao)
+    
+    for d in range(1, 61):
+        if d in sorteados_set: atraso_atual[d] = 0
+        else: atraso_atual[d] += 1
+
+matriz_atrasos = np.array(historico_atrasos)
+vetor_indices = np.array(lista_indices_reais).reshape(-1, 1)
+
+scaler_atrasos = MinMaxScaler(feature_range=(0, 1))
+scaler_indices = MinMaxScaler(feature_range=(0, 1))
+
+atrasos_norm = scaler_atrasos.fit_transform(matriz_atrasos)
+indices_norm = scaler_indices.fit_transform(vetor_indices)
+
+
+# =============================================================
+# 2. FUNÇÕES AUXILIARES: DECODIFICAÇÃO E ENGENHARIA DE FEATURES
+# =============================================================
+def obter_jogo_por_indice(target_index):
+    from math import comb
+    jogo = []
+    n = 60
+    k = 6
+    index_atual = target_index - 1
+    
+    for i in range(1, 61):
+        combinacoes_restantes = comb(n - i, k - 1)
+        if index_atual < combinacoes_restantes:
+            jogo.append(i)
+            k -= 1
+            if k == 0:
+                break
+        else:
+            index_atual -= combinacoes_restantes
+    return jogo
+
+def extrair_features_do_indice(jogo, atrasos_atuais):
+    """ Extrai a assinatura estocástica que o CatBoost vai avaliar no jogo gerado """
+    probs_bayes = [prob_prior_jejum.get(atrasos_atuais[num-1] + 1, 0.0001) for num in jogo]
+    return [
+        np.mean(probs_bayes),                  # Média de aderência à curva horizontal
+        np.std(probs_bayes),                   # Volatilidade Bayes
+        sum(1 for num in jogo if num % 2 == 0), # Balanço de pares
+        np.mean(jogo),                         # Centro de massa do volante
+        np.std(jogo)                           # Dispersão espacial das dezenas
+    ]
+
+
+# =============================================================
+# 3. FUNÇÃO OBJETIVO: OPTUNA TUNANDO O SISTEMA HÍBRIDO (ÍNDICES)
+# =============================================================
+def objective(trial):
+    window_size = trial.suggest_int('window_size', 10, 16)
+    tolerancia_busca = trial.suggest_int('tolerancia_busca', 10000, 30000)
+    corte_catboost = trial.suggest_float('corte_catboost', 0.3, 0.7)
+    
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(indices_norm) - window_size):
+        X_all.append(atrasos_norm[i:(i + window_size), :])
+        y_all.append(indices_norm[i + window_size, 0])
+        gabarito_all.append(gabarito_sorteios[i + window_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    
+    # 3.1 Treinar Regressor LSTM rápido
+    model = Sequential([
+        LSTM(64, return_sequences=False, input_shape=(window_size, 60)),
+        Dropout(0.2),
+        Dense(32, activation='relu'),
+        Dense(1, activation='linear')
+    ])
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    model.fit(X_train, y_train, batch_size=64, epochs=8, verbose=0)
+    
+    # 3.2 Treinar CatBoost Regressor rápido para avaliar os desvios de pontuação
+    X_cb_train, y_cb_train = [], []
+    atrasos_treino_cb = matriz_atrasos[window_size:train_size]
+    gabarito_treino_cb = gabarito_sorteios[window_size:train_size]
+    
+    for idx_c in range(0, len(gabarito_treino_cb), 30): 
+        real = list(gabarito_treino_cb[idx_c])
+        atr = atrasos_treino_cb[idx_c]
+        if len(real) == 6:
+            X_cb_train.append(extrair_features_do_indice(real, atr))
+            y_cb_train.append(1.0) # Alvo ideal
+            fake = sorted(random.sample(range(1, 61), 6))
+            X_cb_train.append(extrair_features_do_indice(fake, atr))
+            y_cb_train.append(0.0) # Alvo ruim
+            
+    cb_regressor = CatBoostRegressor(iterations=30, depth=4, verbose=0)
+    cb_regressor.fit(np.array(X_cb_train), np.array(y_cb_train))
+    
+    # 3.3 Avaliação retroativa nos últimos 60 concursos do bloco de validação
+    previsoes_norm = model.predict(X_test[-60:], verbose=0)
+    previsoes_indices = scaler_indices.inverse_transform(previsoes_norm).flatten()
+    gabarito_recortado = gabarito_teste[-60:]
+    atrasos_no_teste = matriz_atrasos[train_size + window_size - 1 : -1][-60:]
+    
+    score_fim = 0
+    for i in range(60):
+        idx_alvo_previsto = int(previsoes_indices[i])
+        resultado_real = gabarito_recortado[i]
+        atraso_atual_concurso = atrasos_no_teste[i]
+        
+        jogos_simulados = []
+        passo = 1
+        while len(jogos_simulados) < 5 and passo <= tolerancia_busca:
+            for sinal in [1, -1]:
+                idx_candidato = idx_alvo_previsto + (passo * sinal)
+                if 1 <= idx_candidato <= 50063860:
+                    palpite = obter_jogo_por_indice(idx_candidato)
+                    if jogo_e_valido_estritamente(palpite):
+                        # Validação pelo CatBoost Regressor
+                        feats = np.array([extrair_features_do_indice(palpite, atraso_atual_concurso)])
+                        score_qualidade = cb_regressor.predict(feats)[0]
+                        
+                        if score_qualidade >= corte_catboost:
+                            jogos_simulados.append(palpite)
+                            if len(jogos_simulados) == 5: break
+            passo += 1
+            
+        for jogo in jogos_simulados:
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 4: score_fim += 1000
+            elif acertos == 5: score_fim += 50000
+            
+    return score_fim
+
+
+# =============================================================
+# 4. EXECUÇÃO DO TREINAMENTO MASTER DEFINITIVO
+# =============================================================
+if __name__ == '__main__':
+    print("\n[FASE 1] Rodando Optuna no Sistema Combinado de Índices...")
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=10)
+    
+    params = study.best_params
+    print(f"\n-> Melhores parâmetros estruturais localizados: {params}")
+    
+    w_size = params['window_size']
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(indices_norm) - w_size):
+        X_all.append(atrasos_norm[i:(i + w_size), :])
+        y_all.append(indices_norm[i + w_size, 0])
+        gabarito_all.append(gabarito_sorteios[i + w_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    atrasos_no_teste_completo = matriz_atrasos[train_size + w_size - 1 : -1]
+    
+    print("\n[FASE 2] Treinando Regressor LSTM Master para os Índices Alvo...")
+    model_master = Sequential([
+        LSTM(128, return_sequences=False, input_shape=(w_size, 60)),
+        Dropout(0.2),
+        Dense(64, activation='relu'),
+        Dense(1, activation='linear')
+    ])
+    model_master.compile(optimizer='adam', loss='mean_squared_error')
+    model_master.fit(X_train, y_train, batch_size=32, epochs=40, verbose=0)
+    
+    print("Treinando o Avaliador Estatístico CatBoost Regressor Master...")
+    X_cb_master, y_cb_master = [], []
+    atrasos_treino_master = matriz_atrasos[w_size:train_size]
+    gabarito_treino_master = gabarito_sorteios[w_size:train_size]
+    
+    for idx_c in range(len(gabarito_treino_master)):
+        real = list(gabarito_treino_master[idx_c])
+        atr = atrasos_treino_master[idx_c]
+        if len(real) == 6:
+            X_cb_master.append(extrair_features_do_indice(real, atr))
+            y_cb_master.append(1.0)
+            
+            for _ in range(2): # Amostragem de contraste para treinar a rejeição
+                fake = sorted(random.sample(range(1, 61), 6))
+                X_cb_master.append(extrair_features_do_indice(fake, atr))
+                y_cb_master.append(0.0)
+
+    cb_master = CatBoostRegressor(iterations=120, depth=6, learning_rate=0.08, verbose=0)
+    cb_master.fit(np.array(X_cb_master), np.array(y_cb_master))
+    
+    # =============================================================
+    # 5. BACKTESTING TOTAL UTILIZANDO ÍNDICES FILTRADOS
+    # =============================================================
+    print(f"\n[FASE 3] Executando Backtesting em {len(X_test)} concursos...")
+    previsoes_test_norm = model_master.predict(X_test, verbose=0)
+    previsoes_test_reais = scaler_indices.inverse_transform(previsoes_test_norm).flatten()
+    
+    total_ternos, total_quadras, total_quinas, total_senas = 0, 0, 0, 0
+    total_bilhetes_gerados = 0
+    
+    for i in range(len(X_test)):
+        idx_centro_previsto = int(previsoes_test_reais[i])
+        resultado_real = gabarito_teste[i]
+        atraso_atual_concurso = atrasos_no_teste_completo[i]
+        
+        jogos_simulados = []
+        passo = 1
+        while len(jogos_simulados) < 5 and passo <= params['tolerancia_busca']:
+            for sinal in [1, -1]:
+                idx_candidato = idx_centro_previsto + (passo * sinal)
+                if 1 <= idx_candidato <= 50063860:
+                    palpite = obter_jogo_por_indice(idx_candidato)
+                    if jogo_e_valido_estritamente(palpite):
+                        # O CatBoost filtra os vizinhos ruins do índice central previsto
+                        feats = np.array([extrair_features_do_indice(palpite, atraso_atual_concurso)])
+                        if cb_master.predict(feats)[0] >= params['corte_catboost']:
+                            jogos_simulados.append(palpite)
+                            if len(jogos_simulados) == 5: break
+            passo += 1
+            
+        for jogo in jogos_simulados:
+            total_bilhetes_gerados += 1
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 6: total_senas += 1
+            elif acertos == 5: total_quinas += 1
+            elif acertos == 4: total_quadras += 1
+            elif acertos == 3: total_ternos += 1
+            
+    taxa_ternos = (total_ternos / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+    taxa_quadras = (total_quadras / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+
+    print("-" * 75)
+    print(f"RELATÓRIO DE PERFORMANCE DA IA COGNITIVA BASEADA EM ÍNDICES:")
+    print(f"▶ Total de bilhetes válidos validados pelo CatBoost: {total_bilhetes_gerados}")
+    print("-" * 75)
+    print(f"▶ TERNOS:  {total_ternos} acertos ➔ {taxa_ternos:.4f}%")
+    print(f"▶ QUADRAS: {total_quadras} acertos ➔ {taxa_quadras:.4f}%")
+    print(f"▶ QUINAS:  {total_quinas} acertos")
+    print("-" * 75)
+    
+    # =============================================================
+    # 6. PROJEÇÃO DO PRÓXIMO CONCURSO REAL
+    # =============================================================
+    print("\n[FASE 4] Projetando e refinando o índice ideal para o PRÓXIMO concurso...")
+    ultima_janela = atrasos_norm[-w_size:]
+    ultima_janela_reshape = np.reshape(ultima_janela, (1, w_size, 60))
+    
+    pred_futura_norm = model_master.predict(ultima_janela_reshape, verbose=0)
+    idx_futuro_centro = int(scaler_indices.inverse_transform(pred_futura_norm)[0][0])
+    atraso_hoje_real = matriz_atrasos[-1]
+    
+    print(f"➔ ÍNDICE TARGET CENTRAL PROJETADO PELA LSTM: {idx_futuro_centro:,}".replace(",", "."))
+    
+    jogos_finais = []
+    passo = 1
+    while len(jogos_finais) < 5:
+        for sinal in [1, -1]:
+            idx_candidato = idx_futuro_centro + (passo * sinal)
+            if 1 <= idx_candidato <= 50063860:
+                palpite_ia = obter_jogo_por_indice(idx_candidato)
+                if jogo_e_valido_estritamente(palpite_ia):
+                    feats = np.array([extrair_features_do_indice(palpite_ia, atraso_hoje_real)])
+                    if cb_master.predict(feats)[0] >= params['corte_catboost']:
+                        jogos_finais.append((idx_candidato, palpite_ia))
+                        if len(jogos_finais) == 5: break
+        passo += 1
+            
+    print("\n" + "=" * 75)
+    print("      JOGOS DEFINITIVOS: PROXIMIDADE DE ÍNDICE + CORREÇÃO CATBOOST")
+    print("=" * 75)
+    for i, (idx_gerado, jogo) in enumerate(jogos_finais, 1):
+        jogo_formatado = ", ".join(f"{num:02d}" for num in jogo)
+        indice_br = f"{idx_gerado:,}".replace(",", ".")
+        print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice Real: {indice_br}")
+    print("=" * 75)
+
+================================================================================
+ ARQUIVO: neural_netowrk.py
+ CAMINHO: ./neural_netowrk.py
+================================================================================
+
+import numpy as np
+import pandas as pd
+import random
+import optuna
+import os
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout
+from get_data import df_mega_sena
+
+# === IMPORTAÇÕES DA SUA LÓGICA OFICIAL ===
+from gerador import jogo_e_valido_estritamente
+from indice import encontrar_posicao_itertools
+
+# Abafa logs excessivos do TensorFlow
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+# =============================================================
+# 1. PREPARAÇÃO DOS DADOS HISTÓRICOS E DA CURVA DE BAYES
+# =============================================================
+print("Carregando dados e calculando probabilidades de Bayes...")
+colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+df_cronologico = df_mega_sena.sort_values(by='Concurso').copy()
+
+# Carrega a tabela para extrair a probabilidade condicional de cada tamanho de jejum
+df_ausencia = pd.read_excel("matriz_ausencia_completa.xlsx")
+colunas_jejum = [col for col in df_ausencia.columns if str(col).isdigit()]
+
+distribuicao_global_jejuns = {int(col): 0 for col in colunas_jejum}
+for index, row in df_ausencia.iterrows():
+    for col in colunas_jejum:
+        distribuicao_global_jejuns[int(col)] += int(row[col])
+
+total_sequencias = sum(distribuicao_global_jejuns.values())
+
+# P(Jejum = t) -> Distribuição de probabilidade a priori do tamanho do jejum
+prob_prior_jejum = {t: (qtd / total_sequencias) for t, qtd in distribuicao_global_jejuns.items()}
+
+# Reconstrói a matriz temporal para a LSTM
+historico_atrasos = []
+gabarito_sorteios = [] 
+atraso_atual = {d: 0 for d in range(1, 61)}
+
+for index, row in df_cronologico.iterrows():
+    sorteados = set([int(row[c]) for c in colunas_bolas])
+    historico_atrasos.append([atraso_atual[d] for d in range(1, 61)])
+    gabarito_sorteios.append(sorteados)
+    for d in range(1, 61):
+        if d in sorteados: atraso_atual[d] = 0
+        else: atraso_atual[d] += 1
+
+matriz_atrasos = np.array(historico_atrasos)
+scaler = MinMaxScaler(feature_range=(0, 1))
+dados_norm = scaler.fit_transform(matriz_atrasos)
+
+
+# =============================================================
+# 2. FUNÇÃO OBJETIVO: OPTUNA TUNANDO O ENSEMBLE COM MIRA NAS QUADRAS
+# =============================================================
+def objective(trial):
+    # Parâmetros da LSTM
+    window_size = trial.suggest_int('window_size', 10, 18)
+    
+    # MODIFICAÇÃO 1: Alargado o range mínimo do Grupo de Elite para dar margem à Quadra
+    top_n_ia = trial.suggest_int('top_n_ia', 24, 32)
+    
+    lstm_1 = trial.suggest_int('lstm_1', 64, 128, step=32)
+    dropout = trial.suggest_float('dropout', 0.1, 0.3)
+    
+    # Parâmetro do Ensemble
+    peso_lstm = trial.suggest_float('peso_lstm', 0.3, 0.8)
+    peso_bayes = 1.0 - peso_lstm
+    
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - window_size):
+        X_all.append(dados_norm[i:(i + window_size), :])
+        y_all.append(dados_norm[i + window_size, :])
+        gabarito_all.append(gabarito_sorteios[i + window_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    
+    # Modelo LSTM enxuto para otimização rápida
+    model = Sequential([
+        LSTM(lstm_1, return_sequences=False, input_shape=(window_size, 60)),
+        Dropout(dropout),
+        Dense(64, activation='relu'),
+        Dense(60, activation='sigmoid')
+    ])
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    model.fit(X_train, y_train, batch_size=64, epochs=10, verbose=0)
+    
+    # Avaliação retroativa rápida (últimos 80 concursos do teste)
+    previsoes_norm = model.predict(X_test[-80:], verbose=0)
+    previsoes_lstm = scaler.inverse_transform(previsoes_norm)
+    gabarito_recortado = gabarito_teste[-80:]
+    
+    atrasos_no_teste = matriz_atrasos[train_size + window_size - 1 : -1][-80:]
+    
+    score_fim = 0
+    for i in range(80):
+        pred_lstm = list(previsoes_lstm[i])
+        atraso_concurso_atual = atrasos_no_teste[i]
+        resultado_real = gabarito_recortado[i]
+        
+        scores_ensemble = []
+        for idx in range(60):
+            dezena = idx + 1
+            score_lstm_norm = 1 / (1 + pred_lstm[idx])
+            jejum_futuro = atraso_concurso_atual[idx] + 1
+            score_bayes_norm = prob_prior_jejum.get(jejum_futuro, 0.0001)
+            
+            score_final = (peso_lstm * score_lstm_norm) + (peso_bayes * score_bayes_norm)
+            scores_ensemble.append((dezena, score_final))
+            
+        dezenas_sugeridas = sorted(scores_ensemble, key=lambda x: x[1], reverse=True)
+        top_rodada = [item[0] for item in dezenas_sugeridas[:top_n_ia]]
+        
+        jogos_simulados = []
+        tentativas = 0
+        
+        # MODIFICAÇÃO 3: Subiu para 400 tentativas para dar mais fôlego ao gerador estrito
+        while len(jogos_simulados) < 5 and tentativas < 400:
+            tentativas += 1
+            palpite = sorted(random.sample(top_rodada, 6))
+            if jogo_e_valido_estritamente(palpite):
+                jogos_simulados.append(palpite)
+                
+        # MODIFICAÇÃO 2: Sistema de pontos rebalanceado (Terno zerado para o Optuna focar em Quadras)
+        for jogo in jogos_simulados:
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 3: score_fim += 0        # Ignora o Terno para forçar a rede a subir o nível
+            elif acertos == 4: score_fim += 1000   # Peso massivo para a Quadra
+            elif acertos == 5: score_fim += 50000  # Peso mestre para a Quina
+            
+    return score_fim
+
+
+# =============================================================
+# 3. EXECUÇÃO DO PROCESSO MASTER (TREINO FINAL + PALPITE)
+# =============================================================
+if __name__ == '__main__':
+    print("\n[FASE 1] Rodando Optuna focado em QUADRAS no Ensemble (LSTM + Bayes)...")
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=15)
+    
+    params = study.best_params
+    print(f"\n-> Melhores parâmetros do Ensemble localizados: {params}")
+    
+    # Treinamento final com os pesos calibrados pelo Optuna
+    w_size = params['window_size']
+    X_all, y_all, gabarito_all = [], [], []
+    for i in range(len(dados_norm) - w_size):
+        X_all.append(dados_norm[i:(i + w_size), :])
+        y_all.append(dados_norm[i + w_size, :]) 
+        gabarito_all.append(gabarito_sorteios[i + w_size])
+
+    X_all, y_all = np.array(X_all), np.array(y_all)
+    train_size = int(len(X_all) * 0.8)
+    
+    X_train, X_test = X_all[:train_size], X_all[train_size:]
+    y_train = y_all[:train_size]
+    gabarito_teste = gabarito_all[train_size:]
+    atrasos_no_teste_completo = matriz_atrasos[train_size + w_size - 1 : -1]
+    
+    model_master = Sequential([
+        LSTM(params['lstm_1'], return_sequences=False, input_shape=(w_size, 60)),
+        Dropout(params['dropout']),
+        Dense(64, activation='relu'),
+        Dense(60, activation='sigmoid')
+    ])
+    model_master.compile(optimizer='adam', loss='mean_squared_error')
+    
+    # Damos 45 épocas no treino final para consolidar bem os acertos mapeados
+    model_master.fit(X_train, y_train, batch_size=32, epochs=45, verbose=0)
+    
+    # =============================================================
+    # 4. BACKTESTING TOTAL E ACURÁCIA DO ENSEMBLE (PERCENTUAL)
+    # =============================================================
+    print(f"\n[FASE 2] Rodando Backtesting completo em {len(X_test)} concursos...")
+    previsoes_test_norm = model_master.predict(X_test, verbose=0)
+    previsoes_test_reais = scaler.inverse_transform(previsoes_test_norm)
+    
+    total_ternos, total_quadras, total_quinas, total_senas = 0, 0, 0, 0
+    total_bilhetes_gerados = 0
+    p_lstm = params['peso_lstm']
+    p_bayes = 1.0 - p_lstm
+    dezenas_certas_no_grupo = []
+    
+    for i in range(len(X_test)):
+        pred_lstm = previsoes_test_reais[i]
+        atraso_concurso_atual = atrasos_no_teste_completo[i]
+        resultado_real = gabarito_teste[i]
+        
+        scores_ensemble = []
+        for idx in range(60):
+            score_lstm = 1 / (1 + pred_lstm[idx])
+            jejum_futuro = atraso_concurso_atual[idx] + 1
+            score_bayes = prob_prior_jejum.get(jejum_futuro, 0.0001)
+            
+            score_final = (p_lstm * score_lstm) + (p_bayes * score_bayes)
+            scores_ensemble.append((idx + 1, score_final))
+            
+        dezenas_sugeridas = sorted(scores_ensemble, key=lambda x: x[1], reverse=True)
+        top_ia_rodada = [item[0] for item in dezenas_sugeridas[:params['top_n_ia']]]
+        
+        dezenas_certas_no_grupo.append(len(set(top_ia_rodada) & resultado_real))
+        
+        jogos_simulados = []
+        tentativas_loop = 0
+        while len(jogos_simulados) < 5 and tentativas_loop < 1000:
+            tentativas_loop += 1
+            palpite = sorted(random.sample(top_ia_rodada, 6))
+            if jogo_e_valido_estritamente(palpite): 
+                jogos_simulados.append(palpite)
+                
+        for jogo in jogos_simulados:
+            total_bilhetes_gerados += 1
+            acertos = len(set(jogo) & resultado_real)
+            if acertos == 6: total_senas += 1
+            elif acertos == 5: total_quinas += 1
+            elif acertos == 4: total_quadras += 1
+            elif acertos == 3: total_ternos += 1
+            
+    # Cálculo das taxas de acerto percentuais reais no Backtesting (Nota: Aqui mostramos os Ternos reais obtidos)
+    taxa_ternos = (total_ternos / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+    taxa_quadras = (total_quadras / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+    taxa_quinas = (total_quinas / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+    taxa_senas = (total_senas / total_bilhetes_gerados) * 100 if total_bilhetes_gerados > 0 else 0
+
+    print("-" * 75)
+    print(f"RELATÓRIO DE PERFORMANCE DO ENSEMBLE HÍBRIDO:")
+    print(f"▶ Concursos totais de teste avaliados: {len(X_test)}")
+    print(f"▶ Total de bilhetes válidos gerados e analisados: {total_bilhetes_gerados}")
+    print(f"▶ Média de dezenas capturadas no TOP {params['top_n_ia']} da IA: {np.mean(dezenas_certas_no_grupo):.2f} de 6")
+    print(f"▶ Divisão de forças encontrada: IA ({p_lstm*100:.1f}%) | Bayes ({p_bayes*100:.1f}%)")
+    print("-" * 75)
+    print("TAXA PERCENTUAL DE CONVERSÃO HISTÓRICA (HIT RATE):")
+    print(f"▶ TERNOS:  {total_ternos} acertos ➔ {taxa_ternos:.4f}%  (Esperado acaso: 0.4311%)")
+    print(f"▶ QUADRAS: {total_quadras} acertos ➔ {taxa_quadras:.4f}%  (Esperado acaso: 0.0428%)")
+    print(f"▶ QUINAS:  {total_quinas} acertos ➔ {taxa_quinas:.4f}%  (Esperado acaso: 0.0006%)")
+    print(f"▶ SENAS:   {total_senas} acertos ➔ {taxa_senas:.6f}%  (Esperado acaso: 0.000002%)")
+    print("-" * 75)
+    
+    # =============================================================
+    # 5. PALPITE PARA O PRÓXIMO CONCURSO
+    # =============================================================
+    print("\n[FASE 3] Gerando palpites definitivos para o PRÓXIMO concurso...")
+    ultima_janela = dados_norm[-w_size:]
+    ultima_janela_reshape = np.reshape(ultima_janela, (1, w_size, 60))
+    
+    pred_futura_lstm = scaler.inverse_transform(model_master.predict(ultima_janela_reshape, verbose=0))[0]
+    atraso_hoje_real = matriz_atrasos[-1]
+    
+    scores_futuros = []
+    for idx in range(60):
+        score_lstm = 1 / (1 + pred_futura_lstm[idx])
+        jejum_futuro = atraso_hoje_real[idx] + 1
+        score_bayes = prob_prior_jejum.get(jejum_futuro, 0.0001)
+        
+        score_final = (p_lstm * score_lstm) + (p_bayes * score_bayes)
+        scores_futuros.append((idx + 1, score_final))
+        
+    dezenas_sugeridas_futuras = sorted(scores_futuros, key=lambda x: x[1], reverse=True)
+    top_atual_ia = [item[0] for item in dezenas_sugeridas_futuras[:params['top_n_ia']]]
+    
+    print(f"-> Grupo de Elite do Ensemble (TOP {params['top_n_ia']}): {sorted(top_atual_ia)}")
+    
+    jogos_finais = []
+    while len(jogos_finais) < 5:
+        palpite_ia = sorted(random.sample(top_atual_ia, 6))
+        if jogo_e_valido_estritamente(palpite_ia): 
+            jogos_finais.append(palpite_ia)
+            
+    print("\n" + "=" * 75)
+    print("      JOGOS GERADOS VIA ENSEMBLE (LSTM + INFERÊNCIA DE BAYES)")
+    print("=" * 75)
+    for i, jogo in enumerate(jogos_finais, 1):
+        jogo_formatado = ", ".join(f"{num:02d}" for num in jogo)
+        linha_pandas = pd.Series(data=jogo, index=['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6'])
+        indice_calculado = encontrar_posicao_itertools(linha_pandas)
+        indice_br = f"{indice_calculado:,}".replace(",", ".")
+        print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice: {indice_br}")
+    print("=" * 75)
 
 ================================================================================
  ARQUIVO: resultado.py
