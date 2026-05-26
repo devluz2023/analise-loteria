@@ -585,6 +585,881 @@ if __name__ == '__main__':
     print("=" * 75)
 
 ================================================================================
+ ARQUIVO: ia_complete_mathematical_framework.py
+ CAMINHO: ./ia_complete_mathematical_framework.py
+================================================================================
+
+import numpy as np
+import pandas as pd
+import random
+import os
+from math import comb, log, exp
+from collections import Counter
+from sklearn.preprocessing import MinMaxScaler
+from get_data import df_mega_sena
+
+# === IMPORTAÇÕES DA SUA LÓGICA OFICIAL ===
+from gerador import jogo_e_valido_estritamente
+from indice import encontrar_posicao_itertools
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+print("=" * 80)
+print("  INICIALIZANDO FRAMEWORK MATEMÁTICO COM MOTOR DE ACURÁCIA (BACKTESTING)")
+print("=" * 80)
+
+colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+df_cronologico = df_mega_sena.sort_values(by='Concurso').copy()
+total_sorteios = len(df_cronologico)
+
+# CORRIGIDO: Variável global declarada no escopo principal para mitigar o NameError
+matriz_vetores_6d = df_cronologico[colunas_bolas].values.astype(np.float32)
+
+# Divisão de Dados para Prova de Acurácia (80% Histórico Base, 20% Bloco Oculto de Teste)
+split_idx = int(total_sorteios * 0.8)
+df_treino_base = df_cronologico.iloc[:split_idx].copy()
+df_teste_validacao = df_cronologico.iloc[split_idx:].copy()
+
+
+# =============================================================
+# 1. ENGINE MATEMÁTICA REUTILIZÁVEL (FOTO DO PASSADO)
+# =============================================================
+def calcular_subespaco_e_limites_historicos(df_historico_ponto):
+    """
+    Calcula as retas, polinômios, logaritmos e limites de integração
+    usando estritamente os dados disponíveis até aquele ponto do tempo.
+    """
+    sorteios_locais = len(df_historico_ponto)
+    matriz_v_6d = df_historico_ponto[colunas_bolas].values.astype(np.float32)
+    vetor_mu_local = np.mean(matriz_v_6d, axis=0)
+    
+    # 1.1 Regressão Vetorial Local (Retas de Tendência)
+    eixo_t = np.arange(sorteios_locais)
+    proj_retas = []
+    for b_idx in range(6):
+        coef = np.polyfit(eixo_t, matriz_v_6d[:, b_idx], 1)
+        proj_retas.append(coef)
+        
+    # 1.2 Limites de Integração da Casca do Hipercubo
+    dist_euclidianas = np.sqrt(np.sum((matriz_v_6d - vetor_mu_local) ** 2, axis=1))
+    media_d = np.mean(dist_euclidianas)
+    desvio_d = np.std(dist_euclidianas)
+    lim_min = media_d - (0.6 * desvio_d)
+    lim_max = media_d + (1.2 * desvio_d)
+    
+    return vetor_mu_local, proj_retas, lim_min, lim_max
+
+def gerar_universo_elite_polinomial(df_historico_ponto):
+    """ Monta o polinômio não linear com transformação logarítmica de Bayes """
+    sorteios_locais = len(df_historico_ponto)
+    
+    # Recalcula a matriz de transições para o ponto do passado
+    current_ausencia = {d: 0 for d in range(1, 61)}
+    todas_dezenas_locais = []
+    for index, row in df_historico_ponto.iterrows():
+        sorteados = set([row[col] for col in colunas_bolas])
+        for d in range(1, 61):
+            if d in sorteados: current_ausencia[d] = 0
+            else: current_ausencia[d] += 1
+            if d in sorteados: todas_dezenas_locais.append(d)
+            
+    frequencia_dezenas = Counter(todas_dezenas_locais)
+    
+    scores_polinomio = []
+    for d in range(1, 61):
+        freq = frequencia_dezenas.get(d, 0)
+        desvio = freq - (sorteios_locais / 10)
+        jejum = current_ausencia[d]
+        
+        p_bayes = max(0.0001, (freq / (sorteios_locais + 1e-5)) * (1 / (1 + jejum)))
+        log_bayes = log(p_bayes)
+        
+        # Polinômio Composito
+        score = (0.5 * log_bayes) + (0.3 * (freq / (sorteios_locais + 1e-5))) + (0.2 * (desvio ** 2) / (sorteios_locais + 1e-5))
+        scores_polinomio.append((d, score))
+        
+    scores_ordenados = sorted(scores_polinomio, key=lambda x: x[1], reverse=True)
+    return [item[0] for item in scores_ordenados[:28]]
+
+def filtrar_cinco_jogos_framework(universo_elite, v_mu, lim_min, lim_max, conjunto_senas_hist):
+    """ O Crivo do Raciocínio Lógico Booleano para aprovação de jogos """
+    jogos_filtrados = []
+    iteracoes = 0
+    while len(jogos_filtrados) < 5 and iteracoes < 4000:
+        iteracoes += 1
+        palpite = sorted(random.sample(universo_elite, 6))
+        vetor_np = np.array(palpite, dtype=np.float32)
+        
+        # Condições Booleanas
+        dist_p = np.sqrt(np.sum((vetor_np - v_mu) ** 2))
+        c_casca = (lim_min <= dist_p <= lim_max)
+        
+        c_derivada = (np.max(np.diff(vetor_np)) <= 24 and np.min(np.diff(vetor_np)) >= 1)
+        
+        c_paridade = (sum(1 for n in palpite if n % 2 == 0) in [2, 3, 4])
+        
+        c_soma = (120 <= sum(palpite) <= 200)
+        
+        c_conjuntos = True
+        set_palpite = set(palpite)
+        for sena_h in conjunto_senas_hist[-150:]:
+            if len(set_palpite & sena_h) > 4:
+                c_conjuntos = False
+                break
+                
+        if c_casca and c_derivada and c_paridade and c_soma and c_conjuntos:
+            if jogo_e_valido_estritamente(palpite):
+                if palpite not in jogos_filtrados:
+                    jogos_filtrados.append(palpite)
+    return jogos_filtrados
+
+
+# =============================================================
+# 2. PROVA DE ACURÁCIA (FASES DE BACKTESTING)
+# =============================================================
+print(f"\n[FASE 2] Iniciando cálculo de Acurácia Real em {len(df_teste_validacao)} concursos ocultos...")
+
+total_ternos, total_quadras, total_quinas, total_senas = 0, 0, 0, 0
+total_bilhetes_testados = 0
+conjunto_global_senas = [set(v) for v in matriz_vetores_6d]
+
+for i in range(len(df_teste_validacao)):
+    concurso_alvo = df_teste_validacao.iloc[i]
+    gabarito_real = set([int(concurso_alvo[col]) for col in colunas_bolas])
+    
+    # Garante corte limpo no tempo para não vazar o futuro para o modelo
+    df_historico_ponto = df_cronologico[df_cronologico['Concurso'] < concurso_alvo['Concurso']]
+    conjunto_senas_hist_ponto = conjunto_global_senas[:len(df_historico_ponto)]
+    
+    # Roda o pipeline matemático para o ponto do passado
+    v_mu_ponto, proj_retas_ponto, lim_min_ponto, lim_max_ponto = calcular_subespaco_e_limites_historicos(df_historico_ponto)
+    elite_ponto = gerar_universo_elite_polinomial(df_historico_ponto)
+    
+    jogos_gerados_ponto = filtrar_cinco_jogos_framework(elite_ponto, v_mu_ponto, lim_min_ponto, lim_max_ponto, conjunto_senas_hist_ponto)
+    
+    for jogo in jogos_gerados_ponto:
+        total_bilhetes_testados += 1
+        acertos = len(set(jogo) & gabarito_real)
+        if acertos == 6: total_senas += 1
+        elif acertos == 5: total_quinas += 1
+        elif acertos == 4: total_quadras += 1
+        elif acertos == 3: total_ternos += 1
+
+# Cálculo exato das taxas percentuais de acerto
+taxa_ternos = (total_ternos / total_bilhetes_testados) * 100 if total_bilhetes_testados > 0 else 0
+taxa_quadras = (total_quadras / total_bilhetes_testados) * 100 if total_bilhetes_testados > 0 else 0
+taxa_quinas = (total_quinas / total_bilhetes_testados) * 100 if total_bilhetes_testados > 0 else 0
+
+print("-" * 85)
+print(f"RELATÓRIO DE ACURÁCIA MULTIDISCIPLINAR (BACKTESTING COMPLETO):")
+print(f"▶ Total de bilhetes válidos construídos matricialmente: {total_bilhetes_testados}")
+print("-" * 85)
+print("TAXA PERCENTUAL DE CONVERSÃO HISTÓRICA (HIT RATE REAL):")
+print(f"▶ TERNOS:  {total_ternos} acertos ➔ {taxa_ternos:.4f}%  (Esperado acaso: 0.4311%)")
+print(f"▶ QUADRAS: {total_quadras} acertos ➔ {taxa_quadras:.4f}%  (Esperado acaso: 0.0428%)")
+print(f"▶ QUINAS:  {total_quinas} acertos ➔ {taxa_quinas:.4f}%  (Esperado acaso: 0.0006%)")
+print(f"▶ SENAS:   {total_senas} acertos")
+print("-" * 85)
+
+
+# =============================================================
+# 3. GERAÇÃO DO PALPITE DO PRÓXIMO CONCURSO ATUAL
+# =============================================================
+print("\n[FASE 3] Rodando Projeção Geométrica para o PRÓXIMO concurso...")
+v_mu_atual, proj_retas_atual, lim_min_atual, lim_max_atual = calcular_subespaco_e_limites_historicos(df_cronologico)
+elite_atual = gerar_universo_elite_polinomial(df_cronologico)
+
+# CORRIGIDO: Vinculada a variável correta para o laço de projeção temporal futura
+vetor_projetado_futuro = np.array([poly[0] * total_sorteios + poly[1] for poly in proj_retas_atual], dtype=np.float32).flatten()
+jogos_definitivos = filtrar_cinco_jogos_framework(elite_atual, v_mu_atual, lim_min_atual, lim_max_atual, conjunto_global_senas)
+
+print("\n" + "=" * 85)
+print("      JOGOS DEFINITIVOS EMITIDOS VIA ECOSSISTEMA MATEMÁTICO INTEGRADO")
+print("=" * 85)
+for i, jogo in enumerate(jogos_definitivos, 1):
+    jogo_formatado = ", ".join(f"{num:02d}" for num in jogo)
+    linha_pandas = pd.Series(data=jogo, index=colunas_bolas)
+    
+    dist_final = np.sqrt(np.sum((np.array(jogo) - v_mu_atual) ** 2))
+    indice_calculado = encontrar_posicao_itertools(linha_pandas)
+    indice_br = f"{indice_calculado:,}".replace(",", ".")
+    
+    print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice Real: {indice_br} | Distância 6D: {dist_final:.2f} | Soma: {sum(jogo)}")
+print("=" * 85)
+
+================================================================================
+ ARQUIVO: ia_fuzzy_system.py
+ CAMINHO: ./ia_fuzzy_system.py
+================================================================================
+
+import numpy as np
+import pandas as pd
+import random
+import os
+from math import comb
+from collections import Counter
+from get_data import df_mega_sena
+
+# === IMPORTAÇÕES DA SUA LÓGICA OFICIAL ===
+from gerador import jogo_e_valido_estritamente
+from indice import encontrar_posicao_itertools
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+print("=" * 80)
+print("  INICIALIZANDO ECOSSISTEMA COM MATRIZ DE LOGICA FUZZY E ACURÁCIA")
+print("=" * 80)
+
+colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+df_cronologico = df_mega_sena.sort_values(by='Concurso').copy()
+total_sorteios = len(df_cronologico)
+
+# Separação estrita para validação da Acurácia (80% Base Histórica, 20% Validação Cega)
+split_idx = int(total_sorteios * 0.8)
+df_treino_base = df_cronologico.iloc[:split_idx].copy()
+df_teste_validacao = df_cronologico.iloc[split_idx:].copy()
+
+
+# =============================================================
+# 1. FUNÇÕES DE PERTINÊNCIA FUZZY (MEMBERSHIP FUNCTIONS)
+# =============================================================
+def pertinencia_triangular(x, a, b, c):
+    """ Calcula o grau fuzzy [0, 1] em uma curva triangular """
+    if x <= a or x >= c: return 0.0
+    if a < x <= b: return (x - a) / (b - a)
+    if b < x < c: return (c - x) / (c - b)
+    return 0.0
+
+def pertinencia_trapezoidal_direita(x, a, b):
+    """ Curva para conjuntos abertos à direita (ex: Muito Atrasada / Infinito) """
+    if x <= a: return 0.0
+    if x >= b: return 1.0
+    return (x - a) / (b - a)
+
+
+# =============================================================
+# 2. MOTOR CORE FUZZY: INFERÊNCIA E DEFUZZIFICAÇÃO
+# =============================================================
+def calcular_scores_fuzzy_historico(df_historico_ponto):
+    """
+    Fuzzifica o atraso e a frequência de cada dezena, aplica as regras
+    e extrai o score resolvido (Defuzzificado) usando apenas o passado.
+    """
+    sorteios_locais = len(df_historico_ponto)
+    
+    # Mapeia os atrasos no ponto do tempo
+    current_ausencia = {d: 0 for d in range(1, 61)}
+    todas_dezenas_locais = []
+    for index, row in df_historico_ponto.iterrows():
+        sorteados = set([row[col] for col in colunas_bolas])
+        for d in range(1, 61):
+            if d in sorteados: current_ausencia[d] = 0
+            else: current_ausencia[d] += 1
+            if d in sorteados: todas_dezenas_locais.append(d)
+            
+    frequencia_dezenas = Counter(todas_dezenas_locais)
+    media_frequencia_esperada = sorteios_locais / 10
+    
+    scores_fuzzy_dezenas = {}
+    
+    for d in range(1, 61):
+        jejum = current_ausencia[d]
+        freq = frequencia_dezenas.get(d, 0)
+        
+        # 2.1 FUZZIFICAÇÃO (Mapeamento dos graus de pertinência)
+        # Variável Atraso (Jejum)
+        uf_jejum_recente = pertinencia_triangular(jejum, -1, 2, 6)
+        uf_jejum_medio = pertinencia_triangular(jejum, 4, 10, 18)
+        uf_jejum_longo = pertinencia_trapezoidal_direita(jejum, 14, 28)
+        
+        # Variável Frequência
+        uf_freq_fraca = pertinencia_triangular(freq, -1, media_frequencia_esperada * 0.8, media_frequencia_esperada)
+        uf_freq_normal = pertinencia_triangular(freq, media_frequencia_esperada * 0.85, media_frequencia_esperada, media_frequencia_esperada * 1.15)
+        uf_freq_forte = pertinencia_trapezoidal_direita(freq, media_frequencia_esperada * 1.1, media_frequencia_esperada * 1.3)
+        
+        # 2.2 MÁQUINA DE INFERÊNCIA FUZZY (Aplicação das Regras Lógicas Nebulosas)
+        # Usamos o operador MIN para a conjunção 'E' (Lógica de Mamdani)
+        regra1_atracao_maxima = min(uf_jejum_longo, uf_freq_forte)   # Muito atrasada E historicamente forte
+        regra2_atracao_alta = min(uf_jejum_medio, uf_freq_forte)     # Atraso médio E historicamente forte
+        regra3_atracao_media = min(uf_jejum_recente, uf_freq_normal) # Recente E frequência normal
+        regra4_atracao_baixa = min(uf_jejum_recente, uf_freq_fraca)  # Recente E frequência fraca
+        
+        # 2.3 DEFUZZIFICAÇÃO (Centro de Gravidade simplificado / Média Ponderada)
+        # Atribuímos pesos numéricos nítidos para os conjuntos de saída (Singletone Fuzzy)
+        # Máxima = 1.0 | Alta = 0.75 | Média = 0.5 | Baixa = 0.1
+        numerador = (regra1_atracao_maxima * 1.0) + (regra2_atracao_alta * 0.75) + (regra3_atracao_media * 0.5) + (regra4_atracao_baixa * 0.1)
+        denominador = regra1_atracao_maxima + regra2_atracao_alta + regra3_atracao_media + regra4_atracao_baixa
+        
+        if denominador > 0:
+            score_final = numerador / denominador
+        else:
+            score_final = 0.3 # Score base neutro de segurança
+            
+        scores_fuzzy_dezenas[d] = score_final
+        
+    return scores_fuzzy_dezenas
+
+def amostrar_cinco_jogos_fuzzy(scores_fuzzy_ponto):
+    """ Filtra as melhores dezenas fuzzy e monta os 5 cartões estáveis """
+    dezenas_ordenadas = sorted(scores_fuzzy_ponto.items(), key=lambda x: x[1], reverse=True)
+    universo_elite_fuzzy = [item[0] for item in dezenas_ordenadas[:26]]
+    
+    jogos_filtrados = []
+    tentativas = 0
+    while len(jogos_filtrados) < 5 and tentativas < 10000:
+        tentativas += 1
+        palpite = sorted(random.sample(universo_elite_fuzzy, 6))
+        
+        # Restrições de Distribuição Físicas do seu Framework
+        if sum(1 for n in palpite if n % 2 == 0) not in [2, 3, 4]: continue
+        if not (120 <= sum(palpite) <= 200): continue
+            
+        if jogo_e_valido_estritamente(palpite):
+            if palpite not in jogos_filtrados:
+                jogos_filtrados.append(palpite)
+                
+    return jogos_filtrados
+
+
+# =============================================================
+# 3. PROVA DE ACURÁCIA DO SISTEMA FUZZY (BACKTESTING)
+# =============================================================
+print(f"\n[FASE 2] Executando Backtesting Fuzzy em {len(df_teste_validacao)} concursos ocultos...")
+
+total_ternos, total_quadras, total_quinas, total_senas = 0, 0, 0, 0
+total_bilhetes_testados = 0
+
+for i in range(len(df_teste_validacao)):
+    concurso_alvo = df_teste_validacao.iloc[i]
+    gabarito_real = set([int(concurso_alvo[col]) for col in colunas_bolas])
+    
+    # Separação no tempo para congelar o passado do concurso testado
+    df_historico_ponto = df_cronologico[df_cronologico['Concurso'] < concurso_alvo['Concurso']]
+    
+    # Roda as regras lógicas fuzzy daquela época do passado
+    scores_fuzzy_ponto = calcular_scores_fuzzy_historico(df_historico_ponto)
+    jogos_fuzzy_ponto = amostrar_cinco_jogos_fuzzy(scores_fuzzy_ponto)
+    
+    for jogo in jogos_fuzzy_ponto:
+        total_bilhetes_testados += 1
+        acertos = len(set(jogo) & gabarito_real)
+        if acertos == 6: total_senas += 1
+        elif acertos == 5: total_quinas += 1
+        elif acertos == 4: total_quadras += 1
+        elif acertos == 3: total_ternos += 1
+
+# Taxas percentuais de acurácia convertidas
+taxa_ternos = (total_ternos / total_bilhetes_testados) * 100 if total_bilhetes_testados > 0 else 0
+taxa_quadras = (total_quadras / total_bilhetes_testados) * 100 if total_bilhetes_testados > 0 else 0
+
+print("-" * 85)
+print(f"RELATÓRIO DE ACURÁCIA DO INFERIDOR LOGICO FUZZY:")
+print(f"▶ Total de cartões validados no teste cego: {total_bilhetes_testados}")
+print("-" * 85)
+print("TAXA PERCENTUAL DE CONVERSÃO HISTÓRICA (HIT RATE FUZZY):")
+print(f"▶ TERNOS:  {total_ternos} acertos ➔ {taxa_ternos:.4f}%")
+print(f"▶ QUADRAS: {total_quadras} acertos ➔ {taxa_quadras:.4f}%")
+print(f"▶ QUINAS:  {total_quinas} acertos")
+print("-" * 85)
+
+
+# =============================================================
+# 4. PALPITE DEFINITIVO PARA O PRÓXIMO CONCURSO REAL
+# =============================================================
+print("\n[FASE 3] Calculando graus de verdade fuzzy para o PRÓXIMO concurso real...")
+scores_fuzzy_atual = calcular_scores_fuzzy_historico(df_cronologico)
+jogos_finais = amostrar_cinco_jogos_fuzzy(scores_fuzzy_atual)
+
+print("\n" + "=" * 85)
+print("      JOGOS DEFINITIVOS EMITIDOS VIA SISTEMA DE INFERÊNCIA LÓGICA FUZZY")
+print("=" * 85)
+for i, jogo in enumerate(jogos_finais, 1):
+    jogo_formatado = ", ".join(f"{num:02d}" for num in jogo)
+    linha_pandas = pd.Series(data=jogo, index=colunas_bolas)
+    
+    indice_calculado = encontrar_posicao_itertools(linha_pandas)
+    indice_br = f"{indice_calculado:,}".replace(",", ".")
+    
+    print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice Real: {indice_br} | Soma: {sum(jogo)}")
+print("=" * 85)
+
+================================================================================
+ ARQUIVO: ia_genetic_algorithm.py
+ CAMINHO: ./ia_genetic_algorithm.py
+================================================================================
+
+import numpy as np
+import pandas as pd
+import random
+import optuna
+import os
+from math import log
+from collections import Counter
+from get_data import df_mega_sena
+
+# === IMPORTAÇÕES DA SUA LÓGICA OFICIAL ===
+from gerador import jogo_e_valido_estritamente
+from indice import encontrar_posicao_itertools
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+print("=" * 80)
+print("  INICIALIZANDO ECOSSISTEMA EVOLUTIVO (AG) COM MOTOR DE ACURÁCIA")
+print("=" * 80)
+
+colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+df_cronologico = df_mega_sena.sort_values(by='Concurso').copy()
+total_sorteios = len(df_cronologico)
+
+# Divisão de Dados para Prova de Acurácia (80% Histórico Base, 20% Bloco Oculto de Teste)
+split_idx = int(total_sorteios * 0.8)
+df_treino_base = df_cronologico.iloc[:split_idx].copy()
+df_teste_validacao = df_cronologico.iloc[split_idx:].copy()
+
+
+# =============================================================
+# 1. MOTOR DE EVOLUÇÃO E NOTA DE APTIDÃO (FOTO DO PASSADO)
+# =============================================================
+def extrair_parametros_e_genes_historicos(df_historico_ponto):
+    """ Calcula a casca do hipercubo e pesos polinomiais baseados no passado """
+    sorteios_locais = len(df_historico_ponto)
+    matriz_v_6d = df_historico_ponto[colunas_bolas].values.astype(np.float32)
+    vetor_mu_local = np.mean(matriz_v_6d, axis=0)
+    
+    dist_euclidianas = np.sqrt(np.sum((matriz_v_6d - vetor_mu_local) ** 2, axis=1))
+    media_d, desvio_d = np.mean(dist_euclidianas), np.std(dist_euclidianas)
+    lim_min = media_d - (0.6 * desvio_d)
+    lim_max = media_d + (1.2 * desvio_d)
+    
+    # Recalcula a matriz de transições para o ponto do passado
+    current_ausencia = {d: 0 for d in range(1, 61)}
+    todas_dezenas_locais = []
+    for index, row in df_historico_ponto.iterrows():
+        sorteados = set([row[col] for col in colunas_bolas])
+        for d in range(1, 61):
+            if d in sorteados: current_ausencia[d] = 0
+            else: current_ausencia[d] += 1
+            if d in sorteados: todas_dezenas_locais.append(d)
+            
+    frequencia_dezenas = Counter(todas_dezenas_locais)
+    
+    score_genes_local = {}
+    for d in range(1, 61):
+        freq = frequencia_dezenas.get(d, 0)
+        desvio = freq - (sorteios_locais / 10)
+        jejum = current_ausencia[d]
+        
+        p_bayes = max(0.0001, (freq / (sorteios_locais + 1e-5)) * (1 / (1 + jejum)))
+        log_bayes = log(p_bayes)
+        
+        score_genes_local[d] = (0.5 * log_bayes) + (0.3 * (freq / (sorteios_locais + 1e-5))) + (0.2 * (desvio ** 2) / (sorteios_locais + 1e-5))
+        
+    return vetor_mu_local, lim_min, lim_max, score_genes_local
+
+def calcular_fitness_jogo(jogo, score_genes, v_mu, l_min, l_max):
+    """ Função de Aptidão: pontua o nível de adaptação biológica do bilhete """
+    vetor_np = np.array(jogo, dtype=np.float32)
+    score_fitness = sum(score_genes.get(d, -5.0) for d in jogo)
+    
+    dist_p = np.sqrt(np.sum((vetor_np - v_mu) ** 2))
+    if not (l_min <= dist_p <= l_max):
+        score_fitness -= 50.0 # Fora da casca externa
+        
+    if not (120 <= sum(jogo) <= 200):
+        score_fitness -= 30.0 # Soma fora da curva normal
+        
+    if sum(1 for n in jogo if n % 2 == 0) not in [2, 3, 4]:
+        score_fitness -= 20.0 # Paridade desequilibrada
+        
+    if not jogo_e_valido_estritamente(jogo):
+        score_fitness -= 100.0 # Reprovado nos filtros de lógica do Excel
+        
+    return score_fitness
+
+def crossover_uniforme(pai1, pai2, score_genes):
+    filho_genes = set()
+    pool_genes = list(set(pai1) | set(pai2))
+    pool_genes = sorted(pool_genes, key=lambda d: score_genes.get(d, -5), reverse=True)
+    
+    for gene in pool_genes:
+        if len(filho_genes) < 6:
+            if random.random() < 0.7:
+                filho_genes.add(gene)
+    while len(filho_genes) < 6:
+        filho_genes.add(random.randint(1, 60))
+    return sorted(list(filho_genes))
+
+def mutacao_aleatoria(jogo, taxa_mutacao=0.08):
+    if random.random() < taxa_mutacao:
+        idx_mutar = random.randint(0, 5)
+        while True:
+            novo_gene = random.randint(1, 60)
+            if novo_gene not in jogo:
+                jogo[idx_mutar] = novo_gene
+                break
+    return sorted(jogo)
+
+def rodar_ciclo_evolutivo(score_genes, v_mu, l_min, l_max, tam_pop=80, tx_mut=0.08, geracoes=30):
+    """ Executa a seleção natural para convergir nos 5 melhores jogos possíveis """
+    populacao = []
+    while len(populacao) < tam_pop:
+        cromossomo = sorted(random.sample(range(1, 61), 6))
+        if cromossomo not in populacao:
+            populacao.append(cromossomo)
+            
+    for _ in range(geracoes):
+        pop_avaliada = [(ind, calcular_fitness_jogo(ind, score_genes, v_mu, l_min, l_max)) for ind in populacao]
+        pop_avaliada = sorted(pop_avaliada, key=lambda x: x[1], reverse=True)
+        
+        corte_elite = max(2, int(tam_pop * 0.2))
+        nova_pop = [item[0] for item in pop_avaliada[:corte_elite]]
+        
+        while len(nova_pop) < tam_pop:
+            p1 = random.choice(nova_pop[:corte_elite])
+            p2 = random.choice(nova_pop[:corte_elite])
+            filho = crossover_uniforme(p1, p2, score_genes)
+            filho = mutacao_aleatoria(filho, tx_mut)
+            nova_pop.append(filho)
+        populacao = nova_pop
+        
+    # Extrai o Top 5 final altamente adaptado
+    pop_final = sorted([(ind, calcular_fitness_jogo(ind, score_genes, v_mu, l_min, l_max)) for ind in populacao], key=lambda x: x[1], reverse=True)
+    retorno = []
+    for item in pop_final:
+        if item[0] not in retorno:
+            retorno.append(item[0])
+            if len(retorno) == 5: break
+    return retorno
+
+
+# =============================================================
+# 2. PROVA DE ACURÁCIA REAL (BACKTESTING)
+# =============================================================
+print(f"\n[FASE 2] Calculando Acurácia Real em {len(df_teste_validacao)} concursos com evolução genética...")
+
+total_ternos, total_quadras, total_quinas, total_senas = 0, 0, 0, 0
+total_bilhetes_testados = 0
+
+for i in range(len(df_teste_validacao)):
+    concurso_alvo = df_teste_validacao.iloc[i]
+    gabarito_real = set([int(concurso_alvo[col]) for col in colunas_bolas])
+    
+    # Isola o histórico para evitar vazamento de dados do futuro
+    df_historico_ponto = df_cronologico[df_cronologico['Concurso'] < concurso_alvo['Concurso']]
+    
+    # Extrai as forças daquela época do passado
+    v_mu_ponto, l_min_ponto, l_max_ponto, genes_ponto = extrair_parametros_e_genes_historicos(df_historico_ponto)
+    
+    # Roda a evolução natural simulando o passado (Gera os 5 mais adaptados da época)
+    jogos_gerados_ponto = rodar_ciclo_evolutivo(genes_ponto, v_mu_ponto, l_min_ponto, l_max_ponto, tam_pop=80, tx_mut=0.08, geracoes=25)
+    
+    for jogo in jogos_gerados_ponto:
+        total_bilhetes_testados += 1
+        acertos = len(set(jogo) & gabarito_real)
+        if acertos == 6: total_senas += 1
+        elif acertos == 5: total_quinas += 1
+        elif acertos == 4: total_quadras += 1
+        elif acertos == 3: total_ternos += 1
+
+# Conversão estatística das taxas de acerto reais obtidas pelo AG
+taxa_ternos = (total_ternos / total_bilhetes_testados) * 100 if total_bilhetes_testados > 0 else 0
+taxa_quadras = (total_quadras / total_bilhetes_testados) * 100 if total_bilhetes_testados > 0 else 0
+taxa_quinas = (total_quinas / total_bilhetes_testados) * 100 if total_bilhetes_testados > 0 else 0
+
+print("-" * 85)
+print(f"RELATÓRIO DE ACURÁCIA DO MOTOR GENÉTICO EVOLUTIVO:")
+print(f"▶ Total de indivíduos testados na barreira do tempo: {total_bilhetes_testados}")
+print("-" * 85)
+print("TAXA PERCENTUAL DE CONVERSÃO HISTÓRICA (HIT RATE DO PROCESSO SELETIVO):")
+print(f"▶ TERNOS:  {total_ternos} acertos ➔ {taxa_ternos:.4f}%  (Esperado acaso: 0.4311%)")
+print(f"▶ QUADRAS: {total_quadras} acertos ➔ {taxa_quadras:.4f}%  (Esperado acaso: 0.0428%)")
+print(f"▶ QUINAS:  {total_quinas} acertos ➔ {taxa_quinas:.4f}%  (Esperado acaso: 0.0006%)")
+print(f"▶ SENAS:   {total_senas} acertos")
+print("-" * 85)
+
+
+# =============================================================
+# 3. GERAÇÃO DO PALPITE DO PRÓXIMO CONCURSO REAL
+# =============================================================
+print("\n[FASE 3] Executando evolução máxima (50 gerações) para o PRÓXIMO concurso real...")
+v_mu_atual, l_min_atual, l_max_atual, genes_atual = extrair_parametros_e_genes_historicos(df_cronologico)
+
+# No palpite oficial, aumentamos a população e as gerações para refinar a busca
+jogos_definitivos = rodar_ciclo_evolutivo(genes_atual, v_mu_atual, l_min_atual, l_max_atual, tam_pop=120, tx_mut=0.06, geracoes=50)
+
+print("\n" + "=" * 85)
+print("      JOGOS DEFINITIVOS EMITIDOS VIA EVOLUÇÃO DE ALGORITMO GENÉTICO")
+print("=" * 85)
+for i, jogo in enumerate(jogos_definitivos, 1):
+    jogo_formatado = ", ".join(f"{num:02d}" for num in jogo)
+    linha_pandas = pd.Series(data=jogo, index=colunas_bolas)
+    
+    dist_final = np.sqrt(np.sum((np.array(jogo) - v_mu_atual) ** 2))
+    indice_calculado = encontrar_posicao_itertools(linha_pandas)
+    indice_br = f"{indice_calculado:,}".replace(",", ".")
+    
+    print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice Real: {indice_br} | Distância 6D: {dist_final:.2f} | Soma: {sum(jogo)}")
+print("=" * 85)
+
+================================================================================
+ ARQUIVO: ia_gradient_descent.py
+ CAMINHO: ./ia_gradient_descent.py
+================================================================================
+
+import numpy as np
+import pandas as pd
+import random
+import optuna
+import os
+from math import log
+from collections import Counter
+from get_data import df_mega_sena
+
+# === IMPORTAÇÕES DA SUA LÓGICA OFICIAL ===
+from gerador import jogo_e_valido_estritamente
+from indice import encontrar_posicao_itertools
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+print("=" * 80)
+print("  INICIALIZANDO MOTOR DE OTIMIZAÇÃO VIA GRADIENTE DESCENDENTE (GD)")
+print("=" * 80)
+
+colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+df_cronologico = df_mega_sena.sort_values(by='Concurso').copy()
+total_sorteios = len(df_cronologico)
+
+# Divisão de Dados para Prova de Acurácia (80% Histórico Base, 20% Bloco Oculto de Teste)
+split_idx = int(total_sorteios * 0.8)
+df_treino_base = df_cronologico.iloc[:split_idx].copy()
+df_teste_validacao = df_cronologico.iloc[split_idx:].copy()
+
+
+# =============================================================
+# 1. MOTOR DE PROVIMENTO HISTÓRICO E METRICAS DE LOSS
+# =============================================================
+def extrair_ambiente_geometrico_historico(df_historico_ponto):
+    """ Calcula o centro de gravidade e as forças de atração a priori """
+    sorteios_locais = len(df_historico_ponto)
+    matriz_v_6d = df_historico_ponto[colunas_bolas].values.astype(np.float32)
+    vetor_mu_local = np.mean(matriz_v_6d, axis=0)
+    
+    dist_euclidianas = np.sqrt(np.sum((matriz_v_6d - vetor_mu_local) ** 2, axis=1))
+    media_d, desvio_d = np.mean(dist_euclidianas), np.std(dist_euclidianas)
+    lim_min = media_d - (0.6 * desvio_d)
+    lim_max = media_d + (1.2 * desvio_d)
+    
+    current_ausencia = {d: 0 for d in range(1, 61)}
+    todas_dezenas_locais = []
+    for index, row in df_historico_ponto.iterrows():
+        sorteados = set([row[col] for col in colunas_bolas])
+        for d in range(1, 61):
+            if d in sorteados: current_ausencia[d] = 0
+            else: current_ausencia[d] += 1
+            if d in sorteados: todas_dezenas_locais.append(d)
+            
+    frequencia_dezenas = Counter(todas_dezenas_locais)
+    
+    score_dezenas_local = {}
+    for d in range(1, 61):
+        freq = frequencia_dezenas.get(d, 0)
+        desvio = freq - (sorteios_locais / 10)
+        jejum = current_ausencia[d]
+        p_bayes = max(0.0001, (freq / (sorteios_locais + 1e-5)) * (1 / (1 + jejum)))
+        score_dezenas_local[d] = (0.5 * log(p_bayes)) + (0.3 * (freq / (sorteios_locais + 1e-5))) + (0.2 * (desvio ** 2) / (sorteios_locais + 1e-5))
+        
+    return vetor_mu_local, lim_min, lim_max, score_dezenas_local
+
+
+def calcular_funcao_custo(vetor_continuo, score_dezenas, v_mu, l_min, l_max):
+    """
+    Função de Custo (Loss Function): Mede o erro do vetor em relação 
+    à casca geométrica e às propensões de Bayes. Queremos minimizar este valor.
+    """
+    loss = 0.0
+    
+    # 1. Erro de barreira física: força o vetor a manter-se no limite do volante [1, 60]
+    for coord in vetor_continuo:
+        if coord < 1.0: loss += 200.0 * (1.0 - coord) ** 2
+        elif coord > 60.0: loss += 200.0 * (coord - 60.0) ** 2
+        
+    # 2. Erro de Ordenação Estrita (b1 < b2 < ... < b6)
+    for i in range(5):
+        if vetor_continuo[i] >= vetor_continuo[i+1]:
+            loss += 150.0 * (vetor_continuo[i] - vetor_continuo[i+1] + 1.0) ** 2
+            
+    # 3. Erro da Casca do Hipercubo (Distância Euclidiana)
+    dist_p = np.sqrt(np.sum((vetor_continuo - v_mu) ** 2))
+    if dist_p < l_min:
+        loss += 1.5 * (l_min - dist_p) ** 2
+    elif dist_p > l_max:
+        loss += 1.5 * (dist_p - l_max) ** 2
+        
+    # 4. Erro da Curva de Grandeza da Soma (Target ideal no miolo central = 160)
+    soma_atual = np.sum(vetor_continuo)
+    if not (120 <= soma_atual <= 200):
+        loss += 0.5 * (soma_atual - 160.0) ** 2
+        
+    # 5. Penalização baseada nas notas de Bayes (Mapeamento contínuo aproximado)
+    for coord in vetor_continuo:
+        num_discreto = int(np.clip(round(coord), 1, 60))
+        nota_bayes = score_dezenas.get(num_discreto, -5.0)
+        loss -= 8.0 * nota_bayes # Subtrair a nota equivale a minimizar o inverso (maximizar atração)
+        
+    return loss
+
+
+def computar_gradiente_numerico(vetor, score_dezenas, v_mu, l_min, l_max, epsilon=1e-3):
+    """ Calcula as derivadas parciais (Gradiente) através de diferenças finitas """
+    gradiente = np.zeros_like(vetor)
+    for i in range(len(vetor)):
+        vetor_positivo = vetor.copy()
+        vetor_positivo[i] += epsilon
+        loss_positivo = calcular_funcao_custo(vetor_positivo, score_dezenas, v_mu, l_min, l_max)
+        
+        vetor_negativo = vetor.copy()
+        vetor_negativo[i] -= epsilon
+        loss_negativo = calcular_funcao_custo(vetor_negativo, score_dezenas, v_mu, l_min, l_max)
+        
+        # Fórmula do gradiente centrado: (f(x+e) - f(x-e)) / 2e
+        gradiente[i] = (loss_positivo - loss_negativo) / (2.0 * epsilon)
+        
+    return gradiente
+
+
+def otimizar_por_gradiente_descendente(score_dezenas, v_mu, l_min, l_max, lr=0.02, passos=120):
+    """ Executa a descida do gradiente para lapidar o vetor em direção ao custo mínimo """
+    jogos_otimizados = []
+    
+    # Tentamos partir de 15 chutes iniciais diferentes espalhados pelo espaço para achar mínimos distintos
+    for _ in range(15):
+        # Chute inicial aleatório ordenado
+        vetor_atual = np.array(sorted(random.sample(range(1, 61), 6)), dtype=np.float32)
+        
+        for _ in range(passos):
+            grad = computar_gradiente_numerico(vetor_atual, score_dezenas, v_mu, l_min, l_max)
+            # Clip do gradiente para evitar explosão vetorial
+            grad = np.clip(grad, -15.0, 15.0)
+            
+            # PASSO DO GRADIENTE: atualiza na direção oposta à subida do erro
+            vetor_atual -= lr * grad
+            
+        # Concretiza o vetor contínuo de volta para dezenas discretas inteiras
+        jogo_final_discreto = []
+        for coord in vetor_atual:
+            num = int(np.clip(round(coord), 1, 60))
+            if num not in jogo_final_discreto:
+                jogo_final_discreto.append(num)
+                
+        # Garante o preenchimento de segurança com 6 dezenas e ordena
+        while len(jogo_final_discreto) < 6:
+            suplementar = random.randint(1, 60)
+            if suplementar not in juego_final_discreto if 'juego_final_discreto' in locals() else jogo_final_discreto:
+                jogo_final_discreto.append(suplementar)
+        jogo_final_discreto = sorted(jogo_final_discreto)
+        
+        # Filtro de validação rígida na saída do otimizador
+        if jogo_e_valido_estritamente(jogo_final_discreto) and jogo_final_discreto not in jogos_otimizados:
+            if sum(1 for n in jogo_final_discreto if n % 2 == 0) in [2, 3, 4]:
+                jogos_otimizados.append(jogo_final_discreto)
+                if len(jogos_otimizados) == 5: break
+                
+    return jogos_otimizados
+
+
+# =============================================================
+# 2. FUNÇÃO OBJETIVO DO OPTUNA
+# =============================================================
+def objective(trial):
+    lr = trial.suggest_float('lr', 0.005, 0.08, log=True)
+    passos = trial.suggest_int('passos', 60, 150)
+    
+    # Validação rápida de performance para o trial
+    v_mu_p, l_min_p, l_max_p, genes_p = extrair_ambiente_geometrico_historico(df_treino_base)
+    jogos_teste = otimizar_por_gradiente_descendente(genes_p, v_mu_p, l_min_p, l_max_p, lr=lr, passos=passos)
+    
+    # O objetivo é maximizar a quantidade de combinações estruturalmente válidas encontradas pelo GD
+    return len(jogos_teste)
+
+
+# =============================================================
+# 3. PROVA DE ACURÁCIA REAL (BACKTESTING VIA GRADIENTE)
+# =============================================================
+if __name__ == '__main__':
+    print("\n[FASE 1] Otimizando hiperparâmetros da taxa de descida (Learning Rate)...")
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=6)
+    
+    params = study.best_params
+    print(f"\n-> Parâmetros de Gradiente Campeões: {params}")
+    
+    print(f"\n[FASE 2] Calculando Acurácia Real em {len(df_teste_validacao)} concursos com descida de gradiente...")
+    total_ternos, total_quadras, total_quinas, total_senas = 0, 0, 0, 0
+    total_bilhetes_testados = 0
+    
+    for i in range(len(df_teste_validacao)):
+        concurso_alvo = df_teste_validacao.iloc[i]
+        gabarito_real = set([int(concurso_alvo[col]) for col in colunas_bolas])
+        
+        df_historico_ponto = df_cronologico[df_cronologico['Concurso'] < concurso_alvo['Concurso']]
+        
+        # Foto estatística e geométrica do passado
+        v_mu_ponto, l_min_ponto, l_max_ponto, dezenas_ponto = extrair_ambiente_geometrico_historico(df_historico_ponto)
+        
+        # Executa o algoritmo de descida simulando a época
+        jogos_gerados_ponto = otimizar_por_gradiente_descendente(
+            dezenas_ponto, v_mu_ponto, l_min_ponto, l_max_ponto, 
+            lr=params['lr'], passos=params['passos']
+        )
+        
+        for jogo in jogos_gerados_ponto:
+            total_bilhetes_testados += 1
+            acertos = len(set(jogo) & gabarito_real)
+            if acertos == 6: total_senas += 1
+            elif acertos == 5: total_quinas += 1
+            elif acertos == 4: total_quadras += 1
+            elif acertos == 3: total_ternos += 1
+
+    taxa_ternos = (total_ternos / total_bilhetes_testados) * 100 if total_bilhetes_testados > 0 else 0
+    taxa_quadras = (total_quadras / total_bilhetes_testados) * 100 if total_bilhetes_testados > 0 else 0
+
+    print("-" * 85)
+    print(f"RELATÓRIO DE ACURÁCIA DO OTIMIZADOR DE GRADIENTE DESCENDENTE:")
+    print(f"▶ Total de bilhetes extraídos por convergência de custo mínimo: {total_bilhetes_testados}")
+    print("-" * 85)
+    print("TAXA PERCENTUAL DE CONVERSÃO HISTÓRICA (HIT RATE DO GRADIENTE):")
+    print(f"▶ TERNOS:  {total_ternos} acertos ➔ {taxa_ternos:.4f}%")
+    print(f"▶ QUADRAS: {total_quadras} acertos ➔ {taxa_quadras:.4f}%")
+    print(f"▶ QUINAS:  {total_quinas} acertos")
+    print("-" * 85)
+    
+    # =============================================================
+    # 4. GERAÇÃO DO PALPITE DO PRÓXIMO CONCURSO REAL
+    # =============================================================
+    print("\n[FASE 3] Lapidando a curva de erro para o PRÓXIMO concurso real...")
+    v_mu_atual, l_min_atual, l_max_atual, dezenas_atual = extrair_ambiente_geometrico_historico(df_cronologico)
+    
+    # Roda a descida de custo definitiva para hoje
+    jogos_finais = otimizar_por_gradiente_descendente(
+        dezenas_atual, v_mu_atual, l_min_atual, l_max_atual, 
+        lr=params['lr'], passos=params['passos']
+    )
+    
+    print("\n" + "=" * 85)
+    print("      JOGOS DEFINITIVOS EMITIDOS VIA CONVERGÊNCIA DE GRADIENTE DESCENDENTE")
+    print("=" * 85)
+    for i, jogo in enumerate(jogos_finais, 1):
+        jogo_formatado = ", ".join(f"{num:02d}" for num in jogo)
+        linha_pandas = pd.Series(data=jogo, index=colunas_bolas)
+        
+        dist_final = np.sqrt(np.sum((np.array(jogo) - v_mu_atual) ** 2))
+        indice_calculado = encontrar_posicao_itertools(linha_pandas)
+        indice_br = f"{indice_calculado:,}".replace(",", ".")
+        
+        print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice Real: {indice_br} | Distância 6D: {dist_final:.2f} | Soma: {sum(jogo)}")
+    print("=" * 85)
+
+================================================================================
  ARQUIVO: ia_markov.py
  CAMINHO: ./ia_markov.py
 ================================================================================
@@ -2650,6 +3525,182 @@ if __name__ == '__main__':
         indice_br = f"{indice_calculado:,}".replace(",", ".")
         print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice Real: {indice_br}")
     print("=" * 75)
+
+================================================================================
+ ARQUIVO: ia_teoria_jogos.py
+ CAMINHO: ./ia_teoria_jogos.py
+================================================================================
+
+import numpy as np
+import pandas as pd
+import random
+import os
+from math import log
+from collections import Counter
+from get_data import df_mega_sena
+
+# === IMPORTAÇÕES DA SUA LÓGICA OFICIAL ===
+from gerador import jogo_e_valido_estritamente
+from indice import encontrar_posicao_itertools
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+print("=" * 80)
+print("  INICIALIZANDO MOTOR DE TEORIA DOS JOGOS (ESTRATÉGIA ANTAGONISTA COM ACURÁCIA)")
+print("=" * 80)
+
+colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+df_cronologico = df_mega_sena.sort_values(by='Concurso').copy()
+total_sorteios = len(df_cronologico)
+
+# Divisão de dados para validação da Acurácia Real (80% Base, 20% Teste)
+split_idx = int(total_sorteios * 0.8)
+df_treino_base = df_cronologico.iloc[:split_idx].copy()
+df_teste_validacao = df_cronologico.iloc[split_idx:].copy()
+
+
+# =============================================================
+# 1. ENGENHARIA DE MATRIZ DE PAYOFF (TEORIA DOS JOGOS)
+# =============================================================
+def calcular_matriz_payoff_historica(df_historico_ponto):
+    """
+    Calcula a utilidade estatística de cada dezena, subtraindo a
+    probabilidade de colisão/rateio baseada na psicologia das massas.
+    """
+    sorteios_locais = len(df_historico_ponto)
+    
+    current_ausencia = {d: 0 for d in range(1, 61)}
+    todas_dezenas_locais = []
+    for index, row in df_historico_ponto.iterrows():
+        sorteados = set([row[col] for col in colunas_bolas])
+        for d in range(1, 61):
+            if d in sorteados: current_ausencia[d] = 0
+            else: current_ausencia[d] += 1
+            if d in sorteados: todas_dezenas_locais.append(d)
+            
+    frequencia_dezenas = Counter(todas_dezenas_locais)
+    
+    # Vetor de Utilidade do Jogador (Antagonismo à Massa)
+    scores_payoff = {}
+    
+    for d in range(1, 61):
+        freq = frequencia_dezenas.get(d, 0)
+        desvio = freq - (sorteios_locais / 10)
+        jejum = current_ausencia[d]
+        
+        # Força Pura da Matemática (Bayes + Histórico)
+        p_matematica = max(0.0001, (freq / (sorteios_locais + 1e-5)) * (1 / (1 + jejum)))
+        
+        # --- MODELAGEM PSICOLÓGICA DA MASSA (PENALIDADE DE COLLISION) ---
+        penalidade_massa = 0.0
+        if d <= 31:
+            penalidade_massa += 0.35 # Altíssima concentração devido a datas (aniversários)
+        if d in [7, 13, 21, 33, 44]:
+            penalidade_massa += 0.20 # Números de apelo subjetivo / "sorte"
+            
+        # Função de Utilidade Estratégica de Nash (Maximizar ganho científico, minimizar rateio)
+        # O log da probabilidade matemática é balanceado pela esquiva da massa
+        scores_payoff[d] = log(p_matematica) - penalidade_massa + (0.1 * (desvio ** 2) / (sorteios_locais + 1e-5))
+        
+    return scores_payoff
+
+def filtrar_jogos_estrategia_mista(scores_payoff, df_historico_ponto):
+    """ Amostra jogos focando na região de equilíbrio de Nash do espaço vetorial """
+    dezenas_ordenadas = sorted(scores_payoff.items(), key=lambda x: x[1], reverse=True)
+    # Seleciona o subconjunto das 28 dezenas de melhor Payoff Coletivo (Equilíbrio Estratégico)
+    universo_equilibrio = [item[0] for item in dezenas_ordenadas[:28]]
+    
+    # Parâmetros de casca geométrica do passado
+    matriz_v = df_historico_ponto[colunas_bolas].values.astype(np.float32)
+    v_mu = np.mean(matriz_v, axis=0)
+    dist_e = np.sqrt(np.sum((matriz_v - v_mu) ** 2, axis=1))
+    lim_min = np.mean(dist_e) - (0.6 * np.std(dist_e))
+    lim_max = np.mean(dist_e) + (1.2 * np.std(dist_e))
+    
+    jogos_aprovados = []
+    tentativas = 0
+    while len(jogos_aprovados) < 5 and tentativas < 10000:
+        tentativas += 1
+        palpite = sorted(random.sample(universo_equilibrio, 6))
+        vetor_np = np.array(palpite, dtype=np.float32)
+        
+        # Filtros Físicos e Geométricos Unificados
+        dist_p = np.sqrt(np.sum((vetor_np - v_mu) ** 2))
+        if not (lim_min <= dist_p <= lim_max): continue
+        if not (120 <= sum(palpite) <= 200): continue
+        if sum(1 for n in palpite if n % 2 == 0) not in [2, 3, 4]: continue
+            
+        # Restrição Adicional de Teoria dos Jogos: Evita que mais de 3 números pertençam à zona de datas (<=31)
+        # Isso garante blindagem contra rateio massivo
+        if sum(1 for n in palpite if n <= 31) > 3:
+            continue
+            
+        if jogo_e_valido_estritamente(palpite):
+            if palpite not in jogos_aprovados:
+                jogos_aprovados.append(palpite)
+                
+    return jogos_aprovados
+
+
+# =============================================================
+# 2. PROVA DE ACURÁCIA (BACKTESTING DA MATRIZ DE PAYOFF)
+# =============================================================
+print(f"\n[FASE 2] Executando Backtesting de Teoria dos Jogos em {len(df_teste_validacao)} concursos...")
+
+total_ternos, total_quadras, total_quinas, total_senas = 0, 0, 0, 0
+total_bilhetes_testados = 0
+
+for i in range(len(df_teste_validacao)):
+    concurso_alvo = df_teste_validacao.iloc[i]
+    gabarito_real = set([int(concurso_alvo[col]) for col in colunas_bolas])
+    
+    df_historico_ponto = df_cronologico[df_cronologico['Concurso'] < concurso_alvo['Concurso']]
+    
+    # Roda o equilíbrio com fotos do passado
+    payoff_ponto = calcular_matriz_payoff_historica(df_historico_ponto)
+    jogos_gerados_ponto = filtrar_jogos_estrategia_mista(payoff_ponto, df_historico_ponto)
+    
+    for jogo in jogos_gerados_ponto:
+        total_bilhetes_testados += 1
+        acertos = len(set(jogo) & gabarito_real)
+        if acertos == 6: total_senas += 1
+        elif acertos == 5: total_quinas += 1
+        elif acertos == 4: total_quadras += 1
+        elif acertos == 3: total_ternos += 1
+
+taxa_ternos = (total_ternos / total_bilhetes_testados) * 100 if total_bilhetes_testados > 0 else 0
+taxa_quadras = (total_quadras / total_bilhetes_testados) * 100 if total_bilhetes_testados > 0 else 0
+
+print("-" * 85)
+print(f"RELATÓRIO DE ACURÁCIA ESTRATÉGICA (NASH EQUILIBRIUM):")
+print(f"▶ Total de bilhetes submetidos à simulação competitiva: {total_bilhetes_testados}")
+print("-" * 85)
+print("TAXA PERCENTUAL DE CONVERSÃO HISTÓRICA (HIT RATE):")
+print(f"▶ TERNOS:  {total_ternos} acertos ➔ {taxa_ternos:.4f}%")
+print(f"▶ QUADRAS: {total_quadras} acertos ➔ {taxa_quadras:.4f}%")
+print(f"▶ QUINAS:  {total_quinas} acertos")
+print("-" * 85)
+
+
+# =============================================================
+# 3. GERAÇÃO DOS JOGOS PARA O PRÓXIMO CONCURSO REAL
+# =============================================================
+print("\n[FASE 3] Calculando Equilíbrio de Nash e utilidades para o PRÓXIMO concurso real...")
+payoff_atual = calcular_matriz_payoff_historica(df_cronologico)
+jogos_finais = filtrar_jogos_estrategia_mista(payoff_atual, df_cronologico)
+
+print("\n" + "=" * 85)
+print("      JOGOS DEFINITIVOS: EQUILÍBRIO DE NASH (MÁXIMO PAYOFF ANTI-RATEIO)")
+print("=" * 85)
+for i, jogo in enumerate(jogos_finais, 1):
+    jogo_formatado = ", ".join(f"{num:02d}" for num in jogo)
+    linha_pandas = pd.Series(data=jogo, index=colunas_bolas)
+    
+    indice_calculado = encontrar_posicao_itertools(linha_pandas)
+    indice_br = f"{indice_calculado:,}".replace(",", ".")
+    
+    print(f"Jogo {i}: [ {jogo_formatado} ] ➔ Índice Real: {indice_br} | Soma: {sum(jogo)}")
+print("=" * 85)
 
 ================================================================================
  ARQUIVO: ia_vectorial_hypercube.py

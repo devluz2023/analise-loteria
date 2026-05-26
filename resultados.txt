@@ -1,17 +1,592 @@
-Jogo 1: [ 11, 18, 22, 23, 26, 28 ] ➔ Índice: 35.147.198
-Jogo 2: [ 19, 23, 25, 27, 54, 55 ] ➔ Índice: 45.073.739
-Jogo 3: [ 08, 20, 22, 39, 47, 55 ] ➔ Índice: 28.972.104
-Jogo 4: [ 07, 18, 25, 28, 36, 50 ] ➔ Índice: 26.198.106
-Jogo 5: [ 19, 22, 27, 54, 55, 60 ] ➔ Índice: 45.024.580
+A concepção de Matemática em Platão; A concepção de Matemática em Aristóteles e Euclides: O processo de descoberta e o processo da prova; O abandono dos padrões euclideanos: séculos XVII e XVIII: o emprego da razão como ser ideal; O Empirismo; O Racionalismo na Matemática. A Filosofia crítica de Kant: entre o empirismo e o racionalismo. As correntes filosóficas do século XIX: o intuicionismo, o logicismo e o formalismo, representados respectivamente por, Brouwer, Frege e Hilbert.
 
-Jogo 1: [ 04, 08, 09, 14, 20, 26 ] ➔ Índice Real: 14.730.570
-Jogo 2: [ 04, 08, 09, 14, 18, 20 ] ➔ Índice Real: 14.730.483
-Jogo 3: [ 04, 05, 08, 18, 20, 22 ] ➔ Índice Real: 13.833.640
-Jogo 4: [ 10, 14, 20, 22, 24, 26 ] ➔ Índice Real: 32.701.916
-Jogo 5: [ 10, 20, 22, 24, 26, 30 ] ➔ Índice Real: 33.433.606
+Coordenadas cartesianas.  Vetores. Dependência linear. Bases. Produto escalar. Produto vetorial. Translação e rotação. Retas e planos. Distância e ângulo. Cônicas. Equações reduzidas das superfícies quádricas. Coordenadas polares, cilíndricas e esféricas.
+ 
+Cartesian coordinates. Vectors. Linear dependence. Basis. Dot product. Vector product. Translation and rotation. Lines and planes. Distance and angle. Conics. Reduced equation of a quadric surface. Polar, cylindrical and spherical coordinates.
+ 
+ Propriedades de números reais. Funções reais de uma variável real. Algumas funções elementares. Limite. Continuidade. Derivada. Teorema do Valor Médio. Aplicações da derivada. Antiderivada. Integral de Riemann. Teorema Fundamental do Cálculo. Aplicações da integral. Métodos de integração.Integrais Impróprias.
+ 
+Properties of real numbers. Real valued function of a real variable. Some elementary functions. Limit. Continuity. Derivative. Mean Value Theorem. Applications of derivative. Antiderivative. Riemann integral. Fundamental Theorem of Calculus. Applications of integral. Methods of integration. Improper integrals.
+ 
+ Conjunto, elemento, pertinência, conjunto unitário, conjuntos iguais, subconjuntos, conjunto das partes, união, intersecção, complementar, diferença, propriedades, produto cartesiano. Relações, teoria geral de funções: gráfico, domínio, imagem, funções injetoras, sobrejetoras, bijetoras, compostas, inversas. Estudo de funções particulares: polinomiais, modulares, racionais, trigonométricas. Potências de racionais e propriedades. Extensão para expoentes irracionais. Estudo das funções exponenciais e propriedades. Definição da função logarítmica como inversa da exponencial e estudo detalhado de suas propriedades. Parte (2): Análise Combinatória: princípio fundamental da contagem (ou multiplicativo), permutações, combinações, arranjos, permutações circulares, permutações de elementos nem todos distintos.
 
-Jogo 1: [ 05, 07, 13, 19, 52, 59 ] ➔ Índice: 18.015.446
-Jogo 2: [ 20, 22, 26, 29, 33, 52 ] ➔ Índice: 45.672.308
-Jogo 3: [ 32, 33, 45, 47, 48, 58 ] ➔ Índice: 49.604.671
-Jogo 4: [ 05, 19, 32, 45, 50, 59 ] ➔ Índice: 20.303.811
-Jogo 5: [ 10, 26, 30, 48, 58, 59 ] ➔ Índice: 33.867.277
+ Tipos de dados. Organização de banco de dados. Precisão e arredondamento de dados quantitativos. Representação gráfica e tabular de dados qualitativos (tabelas de frequências, gráficos de barras e de setores). Medidas descritivas de dados quantitativos (medidas de posição, dispersão, assimetria e curtose, medidas de concentração, curva de Lorenz, índice de Gini). Representação gráfica de dados quantitativos (histograma, boxplot, ramo-e-folhas). Associação entre variáveis qualitativas (tabelas de contingência). Associação entre uma variável quantitativa e qualitativa (homogeneidade de distribuições, gráficos de médias e de perfis). Associações entre variáveis quantitativas (gráfico de dispersão, noções de correlação linear). Representação gráfica de dados multidimensionais (mapa de calor, gráfico de pontos 3D, gráfico de bolhas 3D, mapa de árvore).
+
+ 1. O que é pesquisa? Por que fazer pesquisa? Por que elaborar um projeto de pesquisa? 2. Método e eficiência nos estudos e na realização de um projeto de pesquisa. - Capacidades e necessidades implicadas: - Planejar: prever prazos, organizar tempo, providenciar o necessário, quantificar esforços, respeitar compromissos;- Leitura: Pré-leitura (seleção do relevante); - Leitura analítica / crítica (reconhecer e compreender as unidades de leitura, fazer analogias, recorrer à memória, distinguir fatos de opiniões, identificar objetivos do autor, avaliar fontes, iluminar texto – quando, quanto, o quê, como, por quê, formas, tomar notas; - sequenciar, definir, sintetizar, esquematizar – níveis hierárquicos, reelaborar material lido – reordenar, levantar questões e resumir); -Prática de leitura analítica; - Resumo: Regras de redução de informação, Prática comentada.
+ 
+1. What is research? Why do research ? Why Develop a research project ? 2 . Method and efficiency studies and conducting a research project . - Capabilities and requirements involved : - Planning : provide deadlines , organize time, provide the necessary efforts to quantify, meeting commitments; - Reading : Pre - reading ( selecting relevant ) - Analytical reading / critique ( recognize and understand the reading units, analogies, resorting to memory, distinguish fact from opinion, identify objectives of the author, evaluating sources, highlight text - when , how , what, how , why, forms , take notes , - sequence , define, synthesize , lay - hierarchical levels , reworking material read - reorganize , raise questions and summarize ) ; - practice analytical reading ; - Summary : Rules for reducing information Practice commented
+
+As seguintes atividades serão desenvolvidas nesta disciplina sob a coordenação do tutor da turma:
+- Definir, juntamente com os docentes de disciplinas da turma no semestre corrente, um cronograma para avaliações e entrega de trabalhos de forma a evitar sobrecarga aos alunos em momentos específicos do semestre
+- Instruir os alunos sobre uma adequada metodologia e organização de estudo com o intuito de otimizar o tempo e a qualidade do aprendizado ao longo do curso (com base no material de apoio, apostila “Aprendendo a Estudar” ou uma adaptação dela)
+- Incentivar os alunos a participarem das atividades de monitoria
+- Identificar e desenvolver soluções a eventuais problemas e dificuldades vivenciadas pelos alunos da turma
+- Preencher a avaliação continuada dos docentes em meados do semestre com as opiniões dos alunos e cobrar o preenchimento da mesma avaliação por parte dos docentes
+- Exibição e debate de um filme a ser escolhido pelo tutor da turma
+- Leitura e discussão de um livro a ser escolhido pelo tutor da turma
+- Organizar uma ou duas palestras sobre a Aplicação da Estatística ou sobre a profissão do estatístico a serem proferidas por pesquisadores ou profissionais da área.
+ 
+Studies and discussions on topics specifically related to the course and the statistics profession. Readings of books, magazines and newspapers articles. Talks on applications of statistics in different fields and on internships and job opportunities. Study methodology and time schedule organization in order to optimize the studying time. Fostering of a spirit of critical vision on the statistics profession and general aspects of the society.
+ 
+
+ Curvas parametrizadas no plano e no espaço. Funções reais de várias variáveis reais. Diferenciabilidade, Transformações e o teorema da função implícita, máximos e mínimos condicionados. Integrais múltiplas. Integrais de Linha, Teorema de Green.  Integrais de  superfície, teoremas de Gauss e Stokes.
+ 
+Parametrized curves. Several real variable functions. Differentiability. Transformations and implicit function theorem. Lagrange multipliers. Multiple integrals. Line integrals, Green Theorem. Surface integrals, Gauss and Stokes theorems
+
+Matrizes, vetores e operações matriciais. Determinante e inversa usual. Dependência linear e posto de uma matriz. Autovalores e autovetores. Espaços vetoriais reais. Base. Dimensão. Subespaços. Soma direta. Transformações lineares. Diagonalização de operadores. Espaços com produto interno. Matrizes particionadas, operações e inversas de matrizes particionadas. Formas quadráticas e classificações de formas quadráticas. Matrizes ortogonais e matrizes idempotentes. Matriz de projeção. Produto de Kronecker e propriedades.  Decomposição de matrizes: Cholesky, decomposição espectral e do valor singular.
+ 
+Matrices , vectors and matrix operations.Determinant and inverse. Linear dependence and rank of a matrix. Eigenvalues and eigenvectors . Real vector spaces. Base. Dimension. Subspaces. Direct sum. Linear transformations. Diagonalization of operators. Inner product spaces. Partitioned matrices, operations and inverses of partitioned matrices. Quadratic forms and quadratic forms classifications. Orthogonal matrices and idempotent matrices .Projection matrix. Kronecker product and properties.Decomposition of matrices : Cholesky , spectral and singular value decomposition.
+
+Conceitos básicos sobre computadores e como o uso dos mesmos pode ajudar os estatísticos: hardware, software, sistema operacional, algoritmos, compiladores, representação interna de dados, pseudocódigo e linguagens de programação. Exemplos do uso do computador em problemas da área.
+Resolução de problemas e desenvolvimento de algoritmos: análise e solução de problemas. Técnicas básicas para a documentação da solução proposta.
+Estruturas de programas: decisão e repetição. 
+Modularização de programas: procedimentos, funções e passagem de parâmetros. 
+Tipos de dados simples e compostos: vetores, matrizes, cadeias de caracteres, registros e conjuntos.
+Depuração de programas: como encontrar defeitos em programas; teste de mesa.
+Exemplos e exercícios práticos de desenvolvimento de programas na linguagem C ou Python. A escolha pela linguagem de programação C ou Python será definida a critério do professor.
+ 
+Basics about computers and how their use can help the statistical: hardware, software , operating system , algorithms, compilers, internal data representation , pseudo-code and programming languages. Examples of computer use in the area of problems.
+Problem solving and algorithm development : analysis and troubleshooting. Basic techniques for the documentation of the proposed solution .
+Program structures : decision and repetition.
+Modularization programs : procedures, functions and parameter passing .
+Simple data types and compounds : vectors, matrices , strings , records and sets.
+Debugging programs : how to find defects in software ; table test.
+
+Conceitos básicos dos computadores e como o uso dos mesmos pode ajudar os estatísticos: hardware, software, sistema operacional, algoritmos, compiladores, representação interna de dados, pseudocódigo e linguagens de programação. Exemplos do uso do computador em problemas da área.
+Resolução de problemas e desenvolvimento de programas: análise e solução de problemas. Técnicas  básicas para a documentação da solução proposta. 
+Estruturas de programas: decisão e repetição. 
+Modularização de programas: procedimentos, funções e passagem de parâmetros.
+Tipos de dados simples e compostos: vetores, matrizes, cadeias de caracteres, registros e conjuntos. Depuração de programas: como encontrar defeitos em programas, teste de mesa.
+
+Seqüências numéricas. Séries numéricas. Critérios de convergência e divergência para séries de termos positivos. Séries absolutamente convergentes. Critérios de Cauchy e de Dirichlet. Séries de potências. Continuidade, diferenciação e integração de séries de potências. Séries de MacLaurin e Taylor. Aplicação de séries de potências na resolução de equações diferenciais ordinárias. Séries de Fourier. Teoremas de convergência. Aplicação de séries de Fourier em problemas envolvendo equações diferenciais parciais.
+ 
+Sequences of real numbers. Series of real numbers. Convergence and divergence criteria for series of nonnegative terms. Absolute convergent series. Cauchy and Dirichlet’s criteria. Sequences of functions. Series of functions. Power series. Fourier Series: heat and wave equations used to motivate the study of Fourier series. Fourier series of even and odd functions. Fourier Theorem. Applications.
+
+
+1. Vetores aleatórios absolutamente contínuos. Distribuições conjuntas, marginais, condicionais e
+independência. Modelos: Weibull, Gumbel, Lognormal, Cauchy, Multinomial e Multinormal. Transformações,
+Método do Jacobiano. Distribuição Qui-quadrado, Distribuição t-Student e F de Snedecor.
+2. Esperança e probabilidade condicional. Desigualdade de Markov, Tchebychev, Jensen e Cauchy-Schwartz.
+Função característica e aplicações. Introdução aos modos de Convergência estocástica: Probabilidade, Quase-certamente, Média e Convergência fraca (Distribuição). Sequência de Ensaios Independentes, Lei dos grandes Números. Teorema do Limite central.
+ 
+1. Absolutely continuous random vectors. Joint, marginal, conditional distributions. Independence. Major
+Models: Weibull, Gumbel, Lognormal, Cauchy, Multinomial and Multiormal. Variable Transformations: Inverse
+and Jacobian Method. Distributions: Chi-squared, Student t and Snedecor F distribution.
+2. Expected value and conditional probability. Inequalities: Markov, Chebychev, Jensen and Cauchy-Schwartz. Characteristic function and applications. Introduction to stochastic convergence of random variables: Probability, almost sure, mean and weak convergence (distribution). Sequence of Independent Trials, Law of large numbers. Central Limit Theorem.
+
+Convergência em distribuição e em probabilidade (apenas enunciar a definição). Amostras e Distribuições Amostrais; Estatísticas; Estimadores e Propriedades dos Estimadores: erro quadrático médio, consistência, BAN; Estatísticas Suficientes e Conjuntamente Suficientes; Critério da fatoração; Família Exponencial e Propriedades; Desigualdade de Informação; Completitude; Rao-Blackwell; Lehmann-Scheffé; Métodos de Estimação e Propriedades dos Estimadores: Método dos Momentos e Máxima Verossimilhança.
+Intervalo de Confiança: Método da Quantidade Pivotal, Intervalo para Populações Normais; Testes de Hipóteses: Erro do Tipo I e II, Função Poder, Tamanho do teste, Teste da Razão de Verossimilhanças, Testes Mais Poderosos, Lema de Neyman-Pearson, Testes Uniformemente Mais Poderosos, Testes de Razão de Verossimilhanças Generalizado, Testes de hipóteses para populações normais: média, variância, igualdade de duas e mais médias e variâncias, testes qui-quadrados: bondade de ajuste, independência. Testes assintóticos.
+ 
+Convergence in distribution and probability ( just stating the definition ). Samples and Sampling Distributions; Statistics; Estimators and Properties of Estimators: mean squared error , consistency, BAN ; Sufficient Statistics and jointly sufficient ; Factorization criterion; Exponential Family and Property , Information Inequality ; Completeness , Rao - Blackwell ; Lehmann - Scheffé ; Estimation Methods and properties of Estimators : method of Moments and Maximum Likelihood.
+Confidence Interval : Method of Pivotal Quantity , Interval for Normal Populations ; Hypothesis Tests : Type I and Type II Error , Power Function , size of the test , the likelihood ratio test , Tests Most Powerful , Neyman - Pearson lemma , uniformly Tests more Powerful ,
+ratio likelihoods Generalized tests , tests of hypotheses for normal populations : mean, variance , equality of two or more means and variances , chi- square tests : goodness of fit , independence . Asymptotic tests .
+
+Funções Recursivas. Noções de análise de algoritmos: notação assintótica, análise do pior caso, melhor caso. Tipos abstratos de dados. Listas lineares: sequenciais, simplesmente e duplamente encadeadas, estáticas e dinâmicas. Pilhas, filas, filas de prioridade. Aplicações em Ciência de Dados. Listas não-lineares: árvores, árvores binárias, operações básicas sobre árvores. Árvores binárias de busca.
+
+epresentação de números no computador. Erros em métodos numéricos. Soluções de equações: métodos iterativos de Newton, Secantes. Soluções de equações e sistemas de equações não-lineares: método iterativo linear, método de Newton. Soluções de equações lineares: métodos exatos - LU, eliminação de Gauss - e iterativos - Gauss-Seidel, Jacobi-Richardson. Determinação numérica de auto-valores e auto-vetores: métodos das potências e Jacobi. Aproximação de funções: método dos mínimos quadrados. Interpolação Polinomial de Lagrange e de Newton. Integração Numérica: fórmulas de Newton-Cotes e Gauss. Minimização e maximização de funções: método descida com busca linear.
+ 
+Machine representation of numbers and roundoff errors. Nonlinear equations: Newton’s method and secant method. Numerical solution of nonlinear systems: fixed-point method and Newton’s method. Solution of linear systems of equations: Direct methods - Gaussian elimination and LU factorization - Iterative methods - Gauss-Seidel and Jacobi-Richardson methods. Approximation of eigenvalues and eigenvectors: power method and Jacobi's method. Least-squares approximation. Polynomial interpolation: Lagrange and Newton interpolation. Numerical integration: Newton-Cotes and Gauss formulas. Minimization and maximization of functions: Steepest descent and line search.
+ 
+
+ Introdução. Processos Estocásticos homogêneos. Processos de Poisson, Cadeias de Markov a parâmetro discreto e a parâmetro contínuo: definições, propriedades, distribuições de equilíbrio. Exemplos e aplicações. Processos de Nascimento e Morte a parâmetro discreto e contínuo e aplicações. Introdução a Teoria de Filas. Filas Gerais M/M/c/K, c 1, K. Introdução à Simulação Estocástica, Métodos de Simulação Estocásticas em Cadeia de Markov, análise estocástica. Introdução aos Processos estocásticos a estado e parâmetro contínuo, processo de difusão e representação por equações diferenciais estocásticas.
+ 
+Introduction. Homogeneous stochastic processes. Poisson Process, Markov chain in discrete and continuous time, definitions, properties, equilibrium distributions. Examples and applications. Birth and Death in discrete and continuous time. Introduction to Queuing Theory. General queues: M/M/c/k.
+Introduction to stochastic simulation Methods of Stochastic Simulation in Markov Chain, stochastic analysis. Introduction to continuous state and parameter stochastic processes, diffusion process and representation by stochastic differential equations.
+
+1. Probabilidade Subjetiva. 2. O método Bayesiano: verossimilhança, distribuição a priori, distribuição a posteriori. 3. Qualidade de uma inferência: métodos clássicos, inferência como um problema de decisão. 4. Inferência conjugada: modelo normal, modelos discretos. 5. Testes de hipóteses. 6. Métodos computacionais. 7. Aplicações: modelos lineares, análise de dados discretos, análise de dados censurados, inferência em populações finitas, e outras aplicações.
+ 
+1. Subjective probability. 2. The Bayesian method: likelihood, prior distribution, posterior distribution. 3. The quality of an inference: classical methods, inference as a decision problem. 4. Conjugate inference: normal model, discrete models. 5. Hypotheses tests. 6. Computational methods. 7. Applications: linear models, analysis of discrete data, analysis of censored data, inference in finite populations and other applications.
+
+Aprendizado supervisionado. Regressão Linear Simples. Regressão Linear Múltipla. Estudo de adequação do modelo. Compromisso entre viés e variância. Transformação e mínimos quadrados ponderados. Regressão Polinomial. Regressão com variáveis Indicadoras. Métodos de Diagnósticos de influência. Seleção de variáveis e construção de modelos. Avaliação da capacidade preditiva dos modelos.
+ 
+Supervised Learning. Simple Linear Regression. Multiple Linear Regression. Assessing adequacy of the regression model. Bias-variance trade-off. Transformations and weighted least squares. Polynomial regression. Regression with indicator variables. Influence diagnostic methods. Model selection and construction. Assessment of the predictive capacity of the models.
+
+onceito da Qualidade. Conceito de Processo. Sistema da Qualidade: ISO 9000, ISO TS 16649. Filosofia 6 Sigma. Ferramentas básicas da qualidade: SIPOC, VOC, Matriz de Relações, Diagrama de Ishikawa, Diagrama de Pareto e FMEA (Análise dos modos de falhas e seus efeitos). Causa de Variação. Preparação para aplicação do Controle Estatístico do Processo. Grupos Racionais, Gráficos de Controle por variáveis e por atributos. Análise de padrões de anomalias em gráficos de controle. Gráfico de CEP para pequenos lotes. Gráfico de Cep multivariado. Análise de capacidade do Processo: Curto Prazo e Longo Prazo. Tratamento de dados não normais: Transformação de variáveis (Box-Cox e Johnson), Métodos Semiparamétricos (Curvas de Pearson). Análise dos sistemas de medição por variável: Planejamento, Estabilidade, Tendência e Linearidade e Repetitividade e Reprodutibilidade. Análise de sistema de medição por atributos: Kappa, Método da detecção de sinais, Método analítico, regressão logística.
+ 
+Quality concept. Process Concept. Quality System: ISO 9000, ISO TS 16649. 6 Sigma methodology. Basic Quality tools: SIPOC, VOC, Ishikawa Diagram. Pareto Chart and FMEA (Failure Mode and Effect Analysis). Variation: Special and common causes. Control Chart Mechanics. Rational Subgroups. Control Charts for variables and attributes. Indication of special causes in control charts. Control charts for small batches. Multivariate control charts. Process capability analysis: short term and long term. Non-normal data. Variable transformation (Box-Cox and Johnson), semi-parametric method (Pearson Curves). Measurement systems analysis for variables: Planning, Stability, Bias and Linearity, Repeatability and Reproducibility. Measurement systems analysis for attribute: Kappa Method, signal detection, Analytical Method, logistic regression.
+
+Introdução à Ciência de Dados. Introdução ao aprendizado de máquina e mineração de dados. Introdução à linguagem Python. Processos de aquisição de dados. Métodos de agregação, transformação e limpeza de dados. Busca e processamentos de textos. Métodos de amostragem de dados. Conceitos de aprendizado e sumarização de dados. Estudo de casos.
+
+1. Medidas robustas de locação e dispersão. 2. Geração de números pseudo-aleatórios e aplicações. 3. Métodos de reamostragem: "bootstrap" e "jacknife". 4. Otimização numérica: métodos de Newton-Raphson, escore de Fisher e quase-Newton. 5. O algoritmo EM. 6. Métodos de Monte Carlo com cadeias de Markov: o amostrador de Gibbs e o algoritmo de Metropolis-Hastings. 7. Noções de regressão robusta.
+ 
+1. Robust measures of location and scale. 2. Pseudo-random numbers and applications. 3. Resampling methods: bootstrap and jacknife. 4. Numerical optimization: Newton-Raphson methods, Fisher score and quasi-Newton methods. 5. The EM algorithm. 6. Markov chain Monte Carlo methods: the Gibbs sampler and the Metropolis-Hastings algorithm. 7. Notions of robust regression.
+
+Planejamento de Amostragem. Amostragem Aleatória Simples e Estratificada. Estimadores de Razão e de Regressão. Amostragem por Conglomerados em um e dois Estágios, Sistemática.
+ 
+Sampling Design. Simple and stratified random sampling. Ratio and Regression Estimators. Cluster sampling: single-stage and two-stage. Systematic sampling.
+
+Comparações simples.  Análise de Variância (um e dois fatores). Métodos de comparações múltiplas.  Componentes de Variância. Planejamentos fatoriais. Planejamentos fatoriais em blocos. Planejamentos fatoriais fracionários.
+ 
+Simple comparative experiments. Analysis of variance (one and two factors). Multiple comparison methods. Components of variance. Factorial designs. Factorial design in blocks. Fractional factorial design.
+
+Dados de tempos de vida. Conceitos básicos de confiabilidade e sobrevivência. Métodos não-paramétricos na estimação da função de sobrevivência. Principais modelos paramétricos de tempos de vida. Modelos de regressão paramétrica. Modelo de regressão de Cox. Estudo de adequação dos modelos.Testes acelerados. Confiabilidade de sistemas. Modelo de mistura padrão. Modelo de tempo de promoção e extensões.
+ 
+Survival time data. Basic concepts in survival and reliability analysis. Non-parametric methods for estimating the survival function. Main parametric models for survival times. Parametric regression models. Cox regression model. Model adequacy. Accelerated tests. System reliability. Standard mixture model. Promotion time cure model and extensions.
+
+Aspectos básicos de Aprendizado; Tarefas de aprendizado; Aprendizado descritivo;Aprendizado preditivo;Algoritmos de Aprendizado de Máquina; Aplicações de Aprendizado de Máquina.
+
+. Séries temporais: conceito, suavização, tendência, sazonalidade, alisamento exponencial. 
+2. Séries estacionárias. 
+3. Função de autocovariância e autocorrelação. 
+4. Modelos: ARMA, ARIMA, SARIMA. 
+5. Identificação. 
+6. Estimação. 
+7. Previsão. 
+8. Diagnósticos. 
+9. indexação: similaridade/dissimilaridade, agrupamento, sumarização e segmentação 
+10. Modelos estruturais: espaço de estado e previsão bayesiana.
+ 
+1. Time series: concepts, smoothing, trend, seasonality and exponential smoothing.
+2. Stationary processes.
+3. Autocovariance and autocorrelation functions.
+4. Models: ARMA, ARIMA,SARIMA.
+5. Identification.
+6. Estimation.
+7. Forecast.
+8. Diagnostics.
+9. Indexing similarity/dissimilarity, clustering, summarization, segmentation.
+10. Structural models: Bayesian state space and forecast.
+ 
+
+ Métodos não paramétricos versus métodos paramétricos. Modelos para distribuições de frequências (gráficos de probabilidades). Distribuição empírica. Postos. Testes de aderência: Teste qui-quadrado de aderência e teste de Kolmogorov-Smirnov. Testes de normalidade. Testes para duas amostras pareadas: teste de McNemar, teste dos sinais e Teste dos sinais de Wilcoxon. Testes para duas amostras independentes: Teste qui-quadrado (associação, proporção e independência em tabelas 2x2), teste exato de Fisher e teste da soma dos postos. Testes para amostras relacionadas: teste de Cochran e teste de Friedman. Testes para amostras independentes: teste qui-quadrado (associação, proporções e independência em tabelas de contingência), teste da mediana e teste de Kruskal-Wallis. Medidas de associação: coeficiente de correlação de Spearman e  coeficiente tau de Kendall. Medida de concordância kappa. 
+ 
+Nonparametric methods versus parametric methods. Models for frequency distributions (probability plots). Empirical distribution. Ranks. Goodness of fit tests: Kolmogorov-Smirnov test and chi-square test. Normality tests. Tests for two paired samples: McNemar's test, sign test and Wilcoxon signed ranks test. Tests for two independent samples: chi-square test (association, proportions and independence in 2x2 tables), Fisher's exact test and rank sum test (Wilcoxon, Mann e Whitney). Tests for related samples: Cochran's test and Friedman's test. Tests for independent samples: chi-square test (association, proportions and independence in contingency tables), median test and Kruskal-Wallis test. Measuring association: Spearman's coefficient of rank correlation and Kendall's tau coefficient. Measuring agreement: kappa coefficient.
+ 
+
+ Vetores aleatórios. Vetor de médias e matriz de covariâncias amostrais. Visualização de dados multivariados Distribuição normal multivariada e verificação de normalidade multivariada. Análise de variância multivariada. Métodos de redução de dimensionalidade: análise de componentes principais, análise fatorial, análise de correlação canônica e análise de correspondência. Análise de agrupamentos (clustering): K-médias e técnicas de agrupamento hierárquico.
+ 
+Random vectors. Sample mean vector and sample covariance matrix. Visualization of multivariate data. The multivariate normal distribution and checking multivariate normality. Multivariate analysis of variance. Dimensionality reduction techniques: principal components analysis,factor analysis. canonical correlation analysis and correspondence analysis. Cluster Analysis: K-Means and hierarchical clustering techniques.
+
+prendizado Supervisionado versus Aprendizado Não-Supervisionado. Modelos Lineares Generalizados: Definição. Função desvio. Métodos de Estimação. Teste de hipóteses. Técnicas de diagnóstico. Aplicações: Modelos Lineares Generalizados versus Classificação. Regressão Logística: Métodos clássicos. Regressão Logística linear. Modelos de dose-resposta. Técnicas de diagnóstico. Seleção de modelos. Aplicações. Regressão de Poisson: Métodos clássicos. Modelos log-lineares. Classificação de modelos. Regressão Logística Múltipla. Aplicações. Modelos de Quase-Verrossimilhança: Definição. Estimação e Testes. Aplicações. Avaliação da capacidade preditiva dos modelos. Compromisso entre viés e variância.
+ 
+Supervised versus Unsupervised Learning. Generalized linear models: Definition. Deviance function. Methods of estimation. Hypothesis testing. Diagnostic techniques. Applications: Generalized linear models versus Classification. Logistic Regression: Classical methods. Linear Logistic regression. Dose-response models. Diagnostic techniques. Selection model. Applications. Poisson regression: Classical methods. Log-linear Models. Classification of Models. Multiple Logistic Regression. Applications. Quasi-likelihood methods: Definition. Estimation and tests. Applications. Evaluation of the predictive capacity of the models. Bias-variance trade-off.
+
+ntrodução à consultoria estatística. Comunicação: Perguntando as questões corretas (habilidades de comunicação oral), como fazer apresentações efetivas, relação consultor-cliente. Trabalhando em grupo (habilidades requeridas para o trabalho em grupo efetivo). Tópicos metodológicos: preparação  de dados para a análise, plano de análises estatísticas, uso de software, gráficos estatísticos. Tópicos conceituais: Pensamento estatístico e Ética e Estatística. Estudo de casos e Projeto de consultoria.
+
+A disciplina poderá ser oferecida de forma híbrida, sendo parte das atividades desenvolvidas remotamente.
+
+Introdução à mineração de dados. Mineração de dados e análise estatística. Importância do banco de dados. O Processo KDD. Procedimentos de segmentação de base. Sumarização. Modelos supervisionados de classificação. Modelos pontuais e predição, regressão logística, regressão probito, regressão logística limitada. Modelos temporais de predição; estimadores empíricos da função de sobrevivência e da função de risco, modelos paramétricos básicos, estimação, compração de modelos. Medidas de capacidade preditiva. Análise de associação. Análise de Agrupamentos. Redução de dimensionalidade. Seleção de atributos. Combinação de classificadores.
+
+A disciplina poderá ser oferecida de forma híbrida, sendo parte das atividades desenvolvidas remotamente.
+ 
+Introduction to data mining . Data mining and statistical analysis . Importance of the database . The KDD process . Procedures based segmentation . Summarization. Supervised classification models .
+Punctual and prediction models , logistic regression , probit regression , logistic regression limited . Temporal prediction models , empirical estimates of the survival function and the hazard function ,
+basic parametric models , estimation , compração models . Measures of predictive ability . Association analysis . Cluster Analysis . Dimensionality reduction . Selection of attributes .
+Combination of classifiers .
+
+
+Atividades programadas em centros especialmente constituídos para proporcionar treinamento em setores profissionais específicos. Atividades realizadas em instituições de ensino e pesquisa, ou a órgãos a elas ligadas, com vista à prestação de serviços. Atividades em empresas do setor. Todas essas atividades somente poderão ser consideradas para o cumprimento do programa da disciplina se forem realizadas na ocasião em que o aluno estiver matriculado na disciplina. Os temas propostos para o desenvolvimento das atividades devem ser aprovados pelo docente responsável pela disciplina no início do semestre, através da avaliação da proposta de trabalho.
+Apresentações públicas dos trabalhos realizados nos estágios dos alunos em intercâmbio de experiências.
+
+Disciplina será totalmente remota.
+ 
+Planned activities in centers especially set up to provide training in specific professional sectors. Activities in educational and research institutions, or agencies associated with them, for the provision of services. All these activities can only be considered to comply with the discipline of the program if made at the time the student is enrolled in the course. The themes proposed for the development of activities must be approved by the teacher responsible for discipline at the beginning of the semester, by evaluating the work propos.
+Public presentations of the work performed on the stages of the exchange of experience among students.
+
+Introdução; Equações Diferenciais de 1a. ordem: variáveis separáveis, equações lineares, equações exatas, fatores integrantes; aplicações; (Equações de Bernoulli e Ricatti); Equações Diferenciais Lineares de 2a. ordem; Equações Diferenciais Lineares de ordem n; Sistemas de Equações Diferenciais Lineares; Solução de Equações e de Sistemas de Equações Diferenciais Ordinárias usando Transformada de Laplace.
+ 
+Introduction to the first order ODE: separable variables, linear equations, exact equations, integrating factor; applications (Bernoulli and Ricatti equations); Second order ODE; order n ODE; Systems of equations with constant coefficients. Non homogeneous system of equations and the variation of constants formula; solutions using Laplace transform.
+ 
+
+ Informação profissional em Ciência de Dados: estrutura do curso, oportunidades na universidade, mercado de trabalho e aplicações de Ciência de Dados, com palestras convidadas ministradas pelos grupos de pesquisa envolvidos com a área. Ciência de Dados, ética e cidadania. Tutoria acadêmica.
+
+
+ Introdução a bases de dados e Sistemas Gerenciadores de Bases de Dados: conceitos fundamentais, bases de dados relacionais e não-relacionais, arquitetura de sistemas de bases de dados. Modelagem de dados utilizando o Modelo Entidade-Relacionamento. Modelo Relacional: conceitos, álgebra relacional e normalização. Introdução a SQL: comandos de definição de dados e de manipulação de dados. Introdução ao processamento de transações: conceitos e teoria. Aspectos de implementação dos sistemas gerenciadores de bases de dados.
+ 
+Introduction to databases and Database Management Systems. Data modeling using the Entity-Relationship Model. Relational Model: concepts, relational algebra and normalization. Introduction to SQL: Data definition and data manipulation commands. Introduction to transaction processing: concepts and theory. Aspects of implementation of database management systems.
+
+
+Associação e independência em tabelas 2x2 e MxN. Medidas de associação e concordância. Tabelas multidimensionais. Modelos probabilísticos: Poisson, Multinomial, produto de Multinomiais e Hipergeométrico. Modelos estruturais lineares: simetria, homogeneidade marginal e o modelo linear geral. Modelos log-lineares. Inferência estatística: metodologia de máxima verossimilhança e de mínimos quadrados generalizados.
+ 
+Inference for two-way (2x2 and NxM) contingency tables: measures of association, testing independence. Measuring agreement. Multidimensional tables. General linear models: symmetry, marginal homogeneity. Log-linear and logit models. Multinomial models. Poisson Models. Statistical inference; maximum likelihood, generalized least squares.
+
+História da Inteligência Artificial (IA). Caracterização dos problemas de IA e aplicações (por exemplo, em processamento de linguagem natural, mineração de dados e robótica). Introdução à programação lógica e seu uso em IA. Métodos de busca para resolução de problemas: busca cega e informada, busca com adversários. Formalismos de representação de conhecimento e inferência: lógica, redes semânticas, frames, scripts e regras de produção. Sistemas baseados em conhecimento. Noções gerais de aprendizado de máquina. Introdução a algumas técnicas relevantes de aprendizado, como árvores de decisão, naive-bayes, redes neurais, algoritmos genéticos e k-means. Ética e impactos da IA.
+
+Integração: Integral de Riemann, Teorema Fundamental do Cálculo. Teoremas clássicos do Cálculo Integral.
+Seqüências e séries de funções: Convergência. Relação entre convergência uniforme e continuidade, derivação e integração. Séries de Taylor. Funções de várias variáveis: Diferenciabilidade de funções. Diferencial. Teorema de Schwarz. Fórmula de Taylor. Pontos Críticos. Diferenciabilidade de  aplicações: Diferenciação. Teorema da Função Inversa. Teorema da Função Implícita. Aplicações.
+ 
+Integration: Riemann's integral, fundamental theorem of calculus. Classic theorems of the integral calculus.
+Sequences and series of functions: Convergence. Relationship between uniform convergence and continuity, derivation and integration. Taylor's series. Functions of several variables: Differentiability. Differential. Schwarz's theorem. Taylor's formula. Critical points. Differentiability of applications: Differentiation. Inverse function theorem. Implicit function theorem. Applications.
+
+Otimização Irrestrita: condições de otimalidade e métodos para otimização sem restrições. Otimização com restrições: métodos para restrições "simples" (caixas e poliedros), condições de otimalidade de Karush-Kuhn-Tucker. Métodos de pontos interiores. Lagrangianos aumentados.
+
+ 
+Unconstrained optimization: optimality conditions and methods for unconstrained optimization. Constrained optimization: methods for bound-constrained optimization and linearly constrained optimization (bounds and linear constraints), Karush-Kuhn-Tucker conditions. Interior point methods. Augmented Lagrangian methods.
+
+Extension activities: Presentation to the community of problems of general interest that correspond to 45 hours of extension activities.
+ 
+
+ Motivação e histórico da TDA. Complexos simpliciais: definições e construções (Vietoris–Rips, Čech, Witness). Conceitos de homologia e homologia persistente. Diagramas de persistência e barcodes. Estabilidade e ruído em dados topológicos. Algoritmos para homologia e homologia persistente. Introdução às principais bibliotecas de TDA: Ripser, GUDHI, Giotto-TDA, scikit-tda. Visualização e interpretação dos diagramas de persistência. Métricas entre diagramas de persistência (Wasserstein, Bottleneck). Aplicações a dados reais.
+ 
+Motivation and history of TDA. Simplicial complexes: definitions and constructions (Vietoris–Rips, Čech, Witness). Concepts of homology and persistent homology. Persistence diagrams and barcodes. Stability and noise in topological data. Algorithms for homology and persistent homology.
+Introduction to the main TDA libraries: Ripser, GUDHI, Giotto-TDA, scikit- tda. Visualization and interpretation of persistence diagrams. Metrics between persistence diagrams (Wasserstein, Bottleneck). Applications to real data.
+
+
+1. Projeto de pesquisa acadêmica: estrutura, escolha do tema/tese, estabelecimento dos objetivos, formulação do problema, construção de hipóteses, classificação da pesquisa (estudo de casos, bibliográficas, descritivas, observacionais, correlacionais, estudos prospectivos e retrospectivos, experimentais, de grupo e de sujeito único), levantamento de informações, organização das informações, cronograma e orçamento. 2. Redação de um trabalho técnico (projeto de pesquisa). 3. Ética e pesquisa. 4. Participação do estatístico em projetos de outras áreas de conhecimento. 5. Normas de citações e referências bibliográficas (ABNT).
+ 
+1. Academic research project : structure , choice of topic / thesis , setting objectives , problem formulation ,
+construction of hypotheses , classification research (case studies , literature , descriptive , observational , correlational , prospective and retrospective studies , experimental group and single subject ) , gathering information , organizing information , schedule and budget. 2 . Writing of technical report ( research project ) . 3 . Ethics and research . 4 . Participation in projects of other statistical areas of knowledge . 5 . Standards of citations and references ( ABNT ) .
+
+
+Introdução às redes complexas. Representação de dados por grafos. Medidas de redes: transitividade, correlação de grau, centralidade. Técnicas de detecção de comunidades. Métodos para predição de links. Inferência em grafos. Aplicações em casos reais: redes sociais, redes tecnológicas e biológicas.
+ 
+Introduction to complex networks. Representation of data by graphs. Measures of networks: transitivity, correlation of degree, centrality. Techniques of detection of communities. Methods for predicting links. Inference in graphs. Applications in real cases: social networks, technological and biological networks.
+
+Origem e Objetivos do processamento de imagens. Fundamentos de visão computacional e seu relacionamento com a visão humana. Dispositivos e formas de aquisição de imagens. Amostragem e Quantização. Sistemas de cores. Técnicas de modificação de escala de cinza. Suavização. Aguçamento de bordas. Transformada no domínio da frequência: Fourier. Restauração de imagens. Segmentação de imagens. Extração de características e noções de descrição e representação. Reconhecimento de padrões visuais.
+ 
+Origin and objectives of image processing. Computer vision fundamentals and relationship with human vision. Devices and image acquisition. Quantization and Sampling. Color systems. Gray level transformation techniques. Smoothing. Edge sharpening. Frequency domain transforms: Fourier. Image segmentation. Image analysis: feature extraction and notions of representation and classification. Pattern Recognition.
+
+Definição de modelos conexionistas. 
+Aprendizado em modelos conexionistas: aprendizado supervisionado, não-supervisionado, competitivo. 
+Arquiteturas básicas: Perceptron, Adaline, Perceptron Multi-Camadas, Redes RBF. 
+Aprendizado profundo: arquiteturas convolucionais (CNN), encoder-decoder, redes adversárias, transfer learning, redes recorrentes e modelos de atenção. 
+Sistemas de auto-organização: PCA, LDA e rede de Kohonen. Memórias Associativas: Redes de Hopfield. Aplicações.
+ 
+Definition of connectionist models.
+Learning in connectionist models: supervised, unsupervised, and competitive learning.
+Basic architectures: Perceptron, Adaline, Multi-Layer Perceptron, RBF Networks.
+Deep learning: convolutional architectures (CNN),encoder-decoder, adversarial networks, transfer learning, recurrent networks and attention models.
+Self-organization systems: PCA, LDA and Kohonen network.
+Associative Memories: Hopfield Networks. Applications.
+
+Números reais como corpo ordenado completo. Seqüências e séries de números reais: convergência, critérios para convergência. Convergência absoluta e condicional de uma série. Reordenação de uma série.Continuidade: Limites de funções reais; funções contínuas, contínuas em intervalos e em conjuntos compactos; continuidade uniforme. Descontinuidades. Diferenciabilidade: a derivada e suas propriedades. Teorema do Valor Médio  e conseqüências. Fórmula de Taylor.
+ 
+Real numbers asa complete ordered field. Real sequences and series: convergence, absolute and conditional convergence, reordering. Continuity: limits of real functions; continuous functions in intervals and compact sets; uniform continuity, discontinuity. Differentiability: derivative and its properties. Mean value theorem and its consequences. Taylor's formula.
+
+
+ntrodução e motivação. Representação de redes complexas. Medidas para caracterização topológica de redes complexas: grau, coeficiente de aglomeração, número de ciclos, comprimento dos menores caminhos, motivos, medidas de centralidade, medidas espectrais, medidas hierárquicas, medidas fractais, estrutura de comunidades. Modelos e Algoritmos de Geração de Redes Complexas: grafos aleatórios, modelo small world, redes livre de escala, redes com estrutura hierárquica, modelo de configuração. Redes ponderadas. Redes espaciais. Métodos de detecção de comunidades. Processos dinâmicos em redes complexas: caminhadas aleatórias, falhas e ataques, falhas em cascata, comunicação e congestionamento, propagação de epidemias, propagação de opiniões, sincronização e dinâmica coletiva. Otimização em redes complexas: otimização de fluxo em redes e robustez. Busca em redes e navegação. Função Geradora. Algoritmos: page-rank, grau de intermediação, detecção de comunidades, sincronização, falhas em cascata, caminhadas aleatórias. Aplicações: redes sociais, Internet,world Wide Web, Bioinformática, cérebro, malhas rodoviárias, linguagem, processamento de imagens, reconhecimento de padrões. Classificação de redes complexas.
+ 
+Introduction and motivation. Representation of complex networks. Measures for topological characterization of complex networks: degree, clustering coefficient, number of cycles, shortest path length, motifs, centrality measures, spectral measures, hierarchical measures, fractal measures, community structure. Models and algorithms for generation of networks: random graphs, small world model, scale-free networks, hierarchical networks, and configuration model. Weighted networks. Spatial networks. Methods for community identification. Dynamical processes in complex networks: random walks, failures and attacks, cascade failures, communication and jamming, epidemic spreading, opinion formation, synchronization and collective behavior. Optimization in complex networks: flow optimization and resilience. Search in networks and navigation. Generating function. Algorithms: page-rank, betweenness centrality, community detection, synchronization, cascade failures, random walks. Applications: social networks, Internet, World Wide Web, bioinformatics, brain, road networks, language, image processing, pattern recognition. Classification of complex networks.
+ 
+
+ Projeto prático em Ciência de Dados, em grupo (usando-se metodologias ativas de aprendizado, como Problem-Based Learning ou Team-Based Learning), integrando bases de dados, técnicas correntes e problemas do mercado e da academia, passando por todas as etapas da Ciência de Dados, com apresentação oral, preparação de relatório escrito e entrega da solução desenvolvida.
+ 
+Instrumentos e Critérios de Avaliação
+     	
+Método de Avaliação
+Exercícios e trabalhos práticos dentro e fora da classe. Aulas práticas utilizando simulações em microcomputador. Seminários para discussão de resultados obtidos nas aplicações. O aluno deve participar das aulas práticas e seminários. Participação em competições para solução de problemas de Ciência de Dados.
+Critério de Avaliação
+Serão atribuídas notas aos trabalhos práticos e participação em discussões e seminários. A nota final será calculada pela média das notas obtidas pelo aluno no decorrer do semestre.
+Norma de Recuperação
+Para a aprovação pela recuperação (nota final < 5), deve-se usar este critério: (NP-2) / 5 * Mrec + 7 - NP, se Mrec >= 5; ou Max { NP, Mrec }, se Mrec < 5.
+ 
+
+ Projeto prático em Ciência de Dados, em grupo (usando-se metodologias ativas de aprendizado, como Problem-Based Learning ou Team-Based Learning), integrando bases de dados, técnicas correntes e problemas do mercado e da academia, passando por todas as etapas da Ciência de Dados, com apresentação oral, preparação de relatório escrito e entrega da solução desenvolvida.
+ 
+Instrumentos e Critérios de Avaliação
+     	
+Método de Avaliação
+Exercícios e trabalhos práticos dentro e fora da classe. Aulas práticas utilizando simulações em microcomputador. Seminários para discussão de resultados obtidos nas aplicações. O aluno deve participar das aulas práticas e seminários. Participação em competições para solução de problemas de Ciência de Dados.
+Critério de Avaliação
+Serão atribuídas notas aos trabalhos práticos e participação em discussões e seminários. A nota final será calculada pela média das notas obtidas pelo aluno no decorrer do semestre.
+Norma de Recuperação
+Para a aprovação pela recuperação (nota final < 5), deve-se usar este critério: (NP-2) / 5 * Mrec + 7 - NP, se Mrec >= 5; ou Max { NP, Mrec }, se Mrec < 5.
+
+Introdução: visualização científica e de informação, mineração visual de dados, fundamentos e desafios. Percepção humana e processamento de informação. Conceitos e técnicas de interação. Classificação das técnicas de visualização e seus dados. Técnicas de visualização para dados uni, bi e tri-dimensionais. Técnicas para visualização de dados vetoriais. Técnicas para visualização de dados tensoriais. Técnicas volumétricas baseadas em superfícies. Técnicas de visualização volumétrica direta. Técnicas de visualização para dados multivariados: técnicas baseadas em ponto, linha e região. Técnicas para a visualização de grafos, árvores e redes. Visualização de documento: dados multimídia e software. Comparação entre técnicas. Aplicações de visualização em Ciência de Dados. Introdução a sistemas e interfaces para visualização. Exemplos e prática.
+ 
+Instrumentos e Critérios de Avaliação
+     	
+Método de Avaliação
+Exposição em aulas e realização de exercícios e trabalhos práticos dentro e fora de sala de aula.
+Critério de Avaliação
+Avaliação por meio de provas escritas, trabalhos e seminários.
+Norma de Recuperação
+Para a aprovação pela recuperação (nota final < 5), deve-se usar este critério: (NP-2) / 5 * Mrec + 7 - NP, se Mrec >= 5; ou Max { NP, Mrec }, se Mrec < 5.
+
+
+Tipos de estudo. Ensaio Clínico. Aleatorização em blocos. Medidas de freqüência de doenças. Risco-relativo, razão de chances, teste de Mantel-Haenszel. Pessoas-tempo, incidência acumulada, densidade de incidência, prevalência, sensibilidade, especificidade, acurácia, valores preditivos positivo e negativo. Valores de Referência. Validade. Reprodutibilidade. Curvas de sobrevida e de sobrevida livre de doença. Metanálise. Experimentos cross-over.
+
+A disciplina poderá ser oferecida de forma híbrida, sendo parte das atividades desenvolvidas remotamente.
+ 
+Types of study. Clinical trials. Block randomization, Measures of disease frequency. Relative risk, odds ratio, Mantel-Haenszel test. People-time, cumulative incidence, density of incidence, prevalence, sensitivity, specificity, acuracy, positive and negative predictive values. Reference values. Validity. Reproducibility. Survival curves and disease free survival. Meta-analysis. Cross-over experiments.
+
+1. Conceituação de Econometria. Tópicos de Análise de Regressão: multicolinearidade. heteroscedasticidade, autocorrelação e variáveis binárias. 2. Variáveis explicativas aleatórias. Erros de medição nas variáveis explicativas. Método dos momentos. Variáveis instrumentais. 3. Modelos de equações simultâneas. Um modelo de oferta e demanda. As equações em forma reduzida. Identificação. Propriedades do estimador de mínimos quadrados ordinários. Estimação por mínimos quadrados em dois estágios. 4. Modelos de defasagens distribuídas. A defasagem geométrica. A transformação de Koyck. Defasagens distribuídas auto-regressivas. 5. Regressão com dados de séries temporais e dados em corte transversal (cross section). Estacionariedade e testes de raízes unitárias. Cointegração. Regressões aparentemente não relacionadas. 6. Modelos com variáveis dependentes qualitativas e limitadas. Variáveis dependentes binárias. Modelos de escolha multinomial. Modelos de escolha ordenada. Modelos com variável dependente limitada.
+ 
+1. Concepts in Econometrics. Topics in regression analysis: multicolinearity, heteroscedasticity, autocorrelation and binary variables. 2. Random covariates. Measurement errors in the covariates. Method of moments. Instrumental variables. 3. Simultaneous equation models. A demand and supply model. Reduced form
+equations. Identification. Properties of the ordinary least square estimator. Two-stage least square estimation. 4. Distributed lag models. The geometric lag. Koyck transformation. Autoregressive distributed lags. 5. Regression with time series and cross-section data. Stationarity and unit root tests. Cointegration. Seemingly
+unrelated regression. 6. Models with qualitative and limited dependente variables. Binary dependent variables. Multinomial models. Ordinal models. Limited dependent variable.
+ 
+
+ Modelos estatísticos para diferentes áreas de conhecimento. Estudos destes modelos estatísticos. Desenvolvimento de ferramentas estatísticas para a análise destes modelos. Análise de dados reais utilizando modelos estatísticos.
+
+A disciplina poderá ser oferecida de forma híbrida, sendo parte das atividades desenvolvidas remotamente.
+ 
+Statistical models for different areas of knowledge. Studies of these statistical models. Development of statistical tools for the analysis of these models. Analysis of real data using statistical models.
+ 
+
+ Métodos da análise clássica de provas e questionários. Vantagens da TRI sobre os métodos clássicos. Principais modelos unidimensionais  da TRI (para dados dicotômicos, nominais e ordinais). Estimação por máxima verossimilhança, máxima verossimilhança marginal e métodos bayesianos (marginal e por Monte Carlo via Cadeia de Markov). Equalização. Aplicações a dados de diferentes áreas, tais como Educação, Psicologia e Marketing.
+ 
+Some methods of CTT for psychometric properties of a test. Unidimensional IRT models: for binary, nominal and ordinal response. CTT x IRT: advantages and disadvantages. Estimation methods: Maximum likelihood, marginal maximum likelihood, bayesian (marginal, EAP, MAP and MCMC). Equating. Practical applications: in Education, in Psychology and in Marketing.
+
+Introdução aos conceitos do processo de descoberta de conhecimento.  Técnicas de preparação de dados. Técnicas de redução de dados. Tarefas e técnicas de mineração de dados: classificação, regressão, detecção de agrupamentos, descoberta de regras de associação, sumarização, modelagem de dependências, detecção de tendências e exceções. Conceitos e técnicas de visualização de dados. Mineração de dados visual. Exemplos de mineração de dados em domínios específicos, tais como: bioinformática, sistemas de informação geográfica, bases de dados de imagens, bases de dados de documentos textuais, bases de dados multimídia, sistemas Web, bases de dados espaço-temporais, sistemas baseados em data streams. Ferramentas de mineração de dados
+
+Introdução: Visualização, Mineração Visual e Analítica Visual de dados; aplicações em ciência e em atividades profissionais variadas (software, texto, imagem, redes, censos, medicina, biologia, etc como fontes de dados). Visualização em Ciência de Dados e Big Data. Problemas e desafios da visualização. Tipos de dados e organização de dados, pré-processamento de dados. Técnicas de visualização básicas e sua classificação. Visualização de dados espaciais: superfícies e volumes, comparação; dados vetoriais e tensoriais. Visualização de dados abstratos: projeções, ícones, técnicas hierárquicas, visualização de grafos, técnicas de visualização baseadas em pontos, técnicas baseadas em pixel, técnicas baseadas em eixos e em atributos. Tarefas e estratégias de interação em análise visual de dados. Dados de múltiplos tipos, atributos de imagens e de textos; sumarização visual; escalabilidade. Aplicações e avanços recentes, recursos em visualização; visualização na mídia.
+ 
+Introduction: Data Visualization, Visual Data Mining and Visual Analytics; applications in science and in diverse professional activities (software, text, images, networks, censuses, medicine, biology, etc. as data sources). Visualization in Data Science and Big Data. Problems and challenges in data visualizatoin. Data types and data organization, data pre-processing. Basic visualization techniques and their classification. Visualization of spatial data: surfaces and volumes, comparison; vector and tensor data. Abstract data visualization: projections, icons, hierarchical techniques, graph visualization, point-based visualization techniques, pixel-based techniques, axis-based and attribute-based techniques. Tasks and interaction strategies in visual data analysis. Multiple types of data, image and text attributes; visual summarization; scalability. Recent applications and advances,
+resources and libraries; visualization in the media.
+
+ré-processamento de dados e criação de modelos utilizando técnicas descritivas e preditivas. Análise de desempenho.
+ 
+Instrumentos e Critérios de Avaliação
+     	
+Método de Avaliação
+Exercícios e trabalhos práticos dentro e fora da classe. Aulas práticas utilizando simulações em microcomputador. Seminários para discussão de resultados obtidos nas aplicações.
+O aluno deve participar das aulas práticas e seminários. Participação em competições internacionais para solução de problemas de Aprendizado de Máquina e Mineração de Dados. Trabalhos práticos extraclasse. Ministrar seminários.
+Critério de Avaliação
+Serão atribuídas notas aos trabalhos práticos e participação em discussões e seminários. A nota final será calculada pela média ponderada das notas obtidas pelo aluno no decorrer do semestre.
+Norma de Recuperação
+Critério de aprovação: NP + (Mrec/2,5), se Mrec > ou =7,5; ou Max {NP, Mrec}, se Mrec < ou = 5,0; ou 5,0, se 5,0 < ou = Mrec < 7,5.( NP=1ª avaliação, Mrec=prova)
+ 
+
+ Introdução à mineração de dados não estruturados. Fundamentos: identificação de problemas; pré-processamento de dados; extração de padrões; e pós-processamento. Tópicos especiais: mineração de textos, mineração de opiniões e análise de sentimentos, mineração de web, mineração de redes, mineração de dados temporais, e mineração de imagens, dentre outros.
+Atividades de Extensão:
+ 
+Instrumentos e Critérios de Avaliação
+     	
+Método de Avaliação
+Aulas teóricas expositivas, acompanhadas de trabalhos práticos e estudos de caso dentro da sala de aula.
+Critério de Avaliação
+Média ponderada de provas e trabalhos práticos realizados durante o curso.
+Norma de Recuperação
+Realização de prova de recuperação. Critério de aprovação: NP+(Mrec/2,5), se Mrec >=7,5; ou Max {NP,Mrec}, se Mrec<=5,0; ou 5,0, se 5,0<=Mrec<7,5 (NP=1ª avaliação, Mrec=prova).
+ 
+
+ Medida de Lebesgue na reta. Conjuntos mensuráveis. Funções mensuráveis. A integral de Lebesgue e sua relação com a integral de Riemann. Diferenciação e integração. Os espaços . Complementos e aplicações.
+ 
+Lebesgue Measures in the real line. Measurable sets. Measurable functions. Lebesgue Integral and its relation with Riemann integral. Differentiation and Integration. L^p spaces. Aplications.
+
+Definições básicas em problemas de finanças e econometria, modelos lineares estacionários: AR, MA e ARMA, modelos não estacionários com raiz unitária, ARIMA, modelos com heterocedasticidade (ARCH / GARCH), modelos de regressão com erros (ARCH / GARCH), modelos de volatilidade estocásticas.
+
+A disciplina poderá ser oferecida de forma híbrida, sendo parte das atividades desenvolvidas remotamente.
+ 
+Basic definitions in econometrics and finance problems, stationary linear models: AR, MA and ARMA models with non-stationary unit root ARIMA.
+Models with heteroskedasticity (ARCH / GARCH) models for time series with stochastic volatility.
+
+
+Introdução à Otimização Linear: Resolução gráfica, o método simplex, aplicações. Introdução à Otimização Inteira: alguns problemas clássicos, aplicações, método de branch-and-bound e métodos de resolução heurísticos.
+ 
+Introduction to Linear programming: Graphical method, the simplex method and applications. Introduction to integer programming: Examples of classic problems, applications, the branch-and-bound method and heuristic methods.
+ 
+
+ Álgebra matricial. Formas quadráticas. Distribuição normal multivariada. Distribuição de formas quadráticas. Modelo linear normal de posto completo. Modelo normal de posto incompleto. Componentes de variância.
+ 
+Matrix algebra. Quadratic forms. Multivariate normal distribution. Distribution of quadratic forms. Linear normal model with full rank matrix. Linear normal model with rank deficient matrix. Variance components.
+ 
+
+ Modelos estatísticos para diferentes áreas de conhecimento. Estudos destes modelos estatísticos. Desenvolvimento de ferramentas estatísticas para a análise destes modelos. Análise de dados reais utilizando modelos estatísticos.
+
+A disciplina poderá ser oferecida de forma híbrida, sendo parte das atividades desenvolvidas remotamente.
+ 
+Statistical models for different areas of knowledge. Studies of these statistical models. Development of statistical tools for the analysis of these models. Analysis of real data using statistical models.
+ 
+ Elaboração de um projeto em Estatística, sob a orientação de docente da USP, da área de Estatística, ou de docente de outra Instituição de Ensino Superior desde que autorizado pelo coordenador do curso. O Projeto deve compreender as fases de levantamento bibliográfico, especificação e implementação. Ao final deve ser escrita uma monografia pormenorizada do projeto.  Todas essas atividades somente poderão ser consideradas para o cumprimento do programa da disciplina se forem realizadas na ocasião em que o aluno estiver matriculado na disciplina.
+Recomenda-se que os alunos estejam inscritos no PIC-SME (Programa de Iniciação Científica do Departamento de Matemática e Estatística). Apresentações públicas dos trabalhos realizados pelos alunos em um intercâmbio de experiências.
+
+Disciplina será totalmente remota.
+ 
+Preparation of a project in Statistics, under the guidance of professor at USP, the Statistics area, or teacher from another institution of higher education as long as authorized by the course coordinator. The Project must understand the stages of literature and state of the art, specification and solution of a problem. At the end it should be writing a detailed monograph of the project. All these activities can only be considered to comply with the discipline of the program if made at the time the student is enrolled in the course.
+It is recommended that students are enrolled in the PIC-SME (Scientific Initiation Program of the Department of Mathematics and Statistics). Public presentations of the work done by students in an exchange of experience.
+
+Desenvolvimento da capacidade empreendedora na área de Computação, com ênfase na análise do negócio de Informática, perfil do empreendedor, sistema de gerenciamento, técnicas de negociação, planejamento estratégico e administração estratégica, qualidade e competitividade.
+
+ 
+Developing of entrepreneurial skills in Computer Science, focusing on the analisys of enterprise informatics, entrepreneur profile, management system, negotiation techniques, strategic planning and strategic management, quality and competitiveness.
+
+Visão geral da gestão organizacional em suas mais variadas frentes: planejamento e administração geral, orçamento e finanças, recursos humanos, gestão ambiental e desenvolvimento sustentável, prevenção de acidentes de trabalho, tecnologia de informação e comunicação, dentre outros tópicos relevantes.
+
+
+- Importância e caracterização da Psicologia da Educação; 
+- Psicologia do desenvolvimento da criança e do adolescente; 
+- O comportamentalismo; 
+- O movimento das concepções alternativas; 
+- Teorias interacionistas de Piaget e Vygotsky; 
+- Aprendizagem significativa; 
+- Mapas conceituais. 
+
+Atividades dirigidas para o desenvolvimento de "Práticas como Componentes Curriculares" envolvem:
+1) Vivência em Educação Especial A Educação Especial ocupa-se do atendimento e da educação de pessoas com deficiência e é uma aplicação importante de várias teorias psicológicas da aprendizagem, desde métodos comportamentalistas como a Análise Comportamental Aplicada (McEachin, Smith & Lovaas, 1993) até a política atual de inclusão, inspirada no paradigma vygotskyano de um desenvolvimento cognitivo mediado por práticas culturais e sociais (Vygotsky, 1989; Freire Costa, 2006; Smagorinsky, 2012). Os alunos realizarão pesquisa teórica sobre as principais metodologias utilizadas na educação especial e suas especificidades para as várias deficiências (10 horas). 
+O conhecimento teórico será complementado e confrontado com visitas às instituições especializadas beneficentes da região (APAE e ACORDE) bem como às escolas públicas e privadas onde haja esforços concretos de inclusão do aluno especial (5 horas). 
+2) Auto eficácia de professores e alunos auto eficácia é a convicção de uma pessoa de ser capaz de realizar uma tarefa específica, mesmo que ela desconheça os meios para realizá-la (Bandura, 1977). A auto eficácia, medida através de questionários específicos para cada atividade, está fortemente correlacionada com o esforço despendido na atividade e, portanto, no desempenho final do sujeito. Nesse sentido, esse conceito tem sido muito útil no contexto educacional, sendo usado como previsor de desempenho de alunos (Pintrich e Schunk, 1996) e professores (Macedo, 2009). Dada a hipotética importância da auto eficácia na educação, os alunos irão aprofundar-se no estudo teórico desse conceito (10 horas) e realizarão entrevistas com coordenadores pedagógicos das escolas públicas e privadas da região a fim de avaliar o grau de conhecimento desses profissionais sobre a auto eficácia bem como seus julgamentos sobre a relevância prática desse conceito. 
+Como complemento, os alunos aplicarão questionários de auto eficácia para os calouros e docentes de algumas disciplinas específicas do curso de Licenciatura de Ciências Exatas (5 horas).
+
+
+1- Natureza e cultura 
+- a natureza para sociedades diversas, em culturas nômades e culturas sedentárias;
+- a natureza para o homem moderno;
+- as novas políticas da natureza no século XX;
+- a arte e a construção de um modo de se olhar a natureza;
+
+2- A história da questão ambiental 
+- desastres ambientais da antiguidade;
+- o desflorestamento na história da Europa e das Américas;
+- o Movimento Conservacionista na Europa e nos EUA;
+- a conservação da natureza no Brasil;
+- a emergência da questão ambiental no século XX;
+- novos campos disciplinares: da ecologia à história ambiental;
+- desastres ambientais.
+
+3- A conservação da natureza no Brasil: estudo de unidades de conservação 
+- conceito, histórico e legislação;
+- estudo de casos de manejo de unidades de conservação; 
+
+4- Economia e política da sustentabilidade 
+- histórico da noção de sustentabilidade;
+- movimento Conservacionista e Ambientalista no século XX;
+- do livro “Primavera Silenciosa” à "Rio + 20"; a "Agenda 21";
+- conceitos de justiça ambiental e antropoceno;
+- teorias do desenvolvimento sustentável.
+
+
+Funções da Filosofia, História e Sociologia das instituições educacionais na formação de professores. Qualidade na Educação: qualidade versus quantidade; os sistemas de avaliação estaduais, nacionais e internacionais. A Educação e o mundo do trabalho. A ideia de Projetos: projetos individuais e coletivos. Tolerância e Cidadania em Educação. Escola Pública: autonomia e valorização do professor. Docência sem discência? Ensinar não é transferir conhecimentos. Ensinar como especificidade humana.
+
+As Práticas como Componentes Curriculares (PCC), sempre relacionadas às discussões e leituras realizadas e articulando os conhecimentos teóricos, compreendem as seguintes atividades:
+- discussões, embasadas em argumentos teóricos e dados estatísticos, sobre a qualidade da educação e suas relações com o mundo do trabalho, em suas vinculações com o exercício da cidadania e também com as experiências pessoais de formação escolar dos licenciandos na escolaridade básica;
+- exame, através de resenhas e sínteses escritas, de alguns aspectos fundamentais da cultura das instituições educacionais, de suas práticas, de seus agentes sociais, seus princípios e valores e suas relações com as teorias educacionais estudadas;
+- leituras e debates sobre questões educacionais veiculadas pela imprensa nacional e/ou internacional, com a finalidade de despertar no futuro professor um posicionamento crítico-reflexivo frente aos acontecimentos atuais que envolvem a Educação e a melhoria do ensino público;
+- leitura e interpretação de textos de alguns pensadores da Educação Nacional, com posterior apresentação dos mesmos pelos futuros professores, como práticas iniciais de organização de aulas e apresentação oral de ideias, a toda a sala.
+- debates a respeito dos sistemas de avaliação da educação, em níveis estadual, nacional e internacional e seus reflexos sobre as práticas de ensino, aprendizagem e avaliação em salas de aula.
+- entrevistas com alunos e professores da escola básica, pública e privada, a respeito dos itens anteriores.
+ 
+The roles of Philosophy, History, and Sociology of educational institutions in teacher training. Quality in Education: quality versus quantity; state, national, and international assessment systems. Education and the world of work. The idea of Projects: individual and collective projects. Tolerance and Citizenship in Education. Public Schools: teacher autonomy and appreciation. Teaching without learning? Teaching is not the transfer of knowledge. Teaching as a human specificity.
+
+The Practices as Curricular Components (PCC), always connected to the discussions and readings carried out and articulating theoretical knowledge, comprise the following activities:
+- discussions, based on theoretical arguments and statistical data, about the quality of education and its relationship with the world of work, in connection with the exercise of citizenship and also with the personal experiences of student-teachers during their own basic schooling;
+- examination, through written reviews and summaries, of some fundamental aspects of the culture of educational institutions, their practices, their social agents, their principles and values, and their relations with the educational theories studied;
+- readings and debates on educational issues covered by the national and/or international press, with the aim of fostering in future teachers a critical-reflective stance toward current events involving Education and the improvement of public schooling;
+- reading and interpretation of texts by some thinkers of National Education, followed by presentations of these texts by future teachers, as initial practices in lesson organization and oral presentation of ideas to the whole class;
+- debates on education assessment systems at the state, national, and international levels, and their impact on teaching, learning, and assessment practices in the classroom;
+- interviews with students and teachers from public and private basic schools, addressing the topics above.
+
+Cada tópico a ser estudado será abordado o aspecto histórico quando este for relevante dentro do desenvolvimento da biologia.
+
+Evolução:
+- origem da vida.
+- teorias evolutivas.
+- eras geológicas e a história geológica da vida.
+- classificação dos seres vivos.
+Biologia Celular:
+- a célula e seu meio.
+- membrana e permeabilidade celular.
+- organelas e suas funções.
+- núcleo, cromossomos.
+- divisão celular: mitose e meiose.
+Histologia - tecidos fundamentais:
+- tecido epitelial.
+- tecido nervoso.
+- tecido muscular.
+
+Atividades dirigidas para articulação entre teoria e prática docente envolvendo:
+- Relacionar os conteúdos tratados em Biologia 1 (Evolução, Biologia Celular e Histologia dos tecidos fundamentais) com os conteúdos previstos no currículo de Ciências da Natureza da Educação Básica;
+- Análise crítica de kits experimentais com conteúdo de Biologia dirigidos para o ensino de Ciências da Natureza da Educação Básica;
+- Elaboração de plano de aula para Ciências da Natureza das séries finais do ensino fundamental que contemple os conteúdos tratados em Biologia 1.
+ 
+Each topic to be studied will include the historical aspect when it is relevant to the development of biology.
+
+Evolution:
+- Origin of life
+- Evolutionary theories
+- Geological eras and the geological history of life
+- Classification of living beings
+Cell Biology:
+- The cell and its environment
+- Cell membrane and permeability
+- Organelles and their functions
+- Nucleus, chromosomes
+- Cell division: mitosis and meiosis
+Histology - Fundamental Tissues:
+- Epithelial tissue
+- Nervous tissue
+- Muscular tissue
+
+Activities designed to connect theory and teaching practice, including:
+- Relating the content covered in Biology 1 (Evolution, Cell Biology, and Histology of the fundamental tissues) to the topics outlined in the Natural Sciences curriculum of Basic Education
+- Critical analysis of experimental kits with Biology content aimed at teaching Natural Sciences in Basic Education
+- Preparation of a lesson plan for Natural Sciences in the final years of elementary education that includes the content addressed in Biology 1
+ Coordenadas cartesianas. Vetores. Dependência linear. Bases. Produto escalar. Produto
+vetorial. Translação e rotação. Retas e planos. Distância e ângulo. Cônicas. Equações
+reduzidas das superfícies quádricas. Coordenadas polares, cilíndricas e esféricas.
+ 
+Cartesian coordinates. Vectors. Linear dependence. Basis. Dot product. Vector product.
+Translation and rotation. Lines and planes. Distance and angle. Conics. Reduced equation of a quadric surface. Polar, cylindrical and spherical coordinates.
+
+Axiomas de Kolmogorov, Definição de espaço de probabilidade, propriedades, independência, probabilidade condicional e Teorema de Bayes. Espaços amostrais equiprováveis e aplicações. Espaços amostrais finitos e infinitos enumeráveis. Variáveis e vetores aleatórios discretos, distribuições marginais, conjuntas, condicionais e independência. Transformações. Momentos, Esperança, Variância e Covariância. Modelos:
+uniforme, binomial, geométrica, binomial negativa, hipergeométrica e Poisson. Funções Geratrizes. Aproximação da distribuição de Poisson via a distribuição binomial. Variáveis aleatórias absolutamente contínua, distribuição, função densidade de probabilidade, Momentos, Esperança, Variância, Covariância. Modelos: Uniforme, Exponencial e Normal.
+Métodos de Simulação. Método Congruencial, Transfor
+
+
+mada Inversa, Princípio da Aceitação-Rejeição. Algoritmo para gerar: Binomial, geométrica e Exponencial.
+
+
+- Natureza, Urbano e Paisagem
+-  definições de Natureza ao longo da História
+-  tipos de urbanização com ênfase nos processos de adaptação do território
+-  a Paisagem como a construção de um olhar sobre a Natureza
+
+2- O Plano e a Cidade 
+-  origens hipodâmicas e testemunhos históricos da figura do plano
+-  medievo e cidades do capitalismo mercantil
+-  período industrial – grandes chaves de respostas à questão do crescimento das cidades: cidade jardim e racional, funcionalismo
+
+3- Exemplos históricos da dicotomia entre meio físico e ocupação humana
+-  estudo de casos 
+-  reflexão crítica acerca das soluções propostas e construídas
+-  infraestrutura urbana e desenvolvimento
+
+4- Meio Ambiente e Cidade: processos ecológicos e planejamento
+- intervenções E meio-ambiente urbano: Plano Diretor e Planejamento estratégico: uma resposta contemporânea para as questões de desenvolvimento e meio-ambiente
+- planos de ações climáticas, urbanização e sustentabilidade
+- viagem didática para aplicação dos aspectos teóricos em um caso prático
+
+
+Relação do indivíduo com a Ciência. Relação entre Ciência, técnica e educação. Aspectos sociológicos da educação. As teorias da Educação e o problema da marginalidade. Escola e Democracia. Educação e Violência. Educação e qualidade de vida. A Educação na Imprensa atual.
+
+As Práticas como Componentes Curriculares (PCC), sempre relacionadas às discussões e leituras realizadas e articulando os conhecimentos teóricos, compreendem as seguintes atividades:
+- discussões, embasadas em argumentos teóricos e dados estatísticos, sobre a formação em ciências e suas tecnologias, em suas vinculações com o exercício da cidadania e também com as experiências pessoais de formação escolar dos licenciandos na escolaridade básica;
+- exame, através de resenhas e sínteses escritas, de alguns aspectos fundamentais da cultura das instituições educacionais, de suas práticas, de seus agentes sociais, seus princípios e valores e suas relações com as teorias educacionais estudadas;
+- leituras e debates sobre questões educacionais veiculadas pela imprensa nacional e/ou internacional, com a finalidade de despertar no futuro professor um posicionamento crítico-reflexivo frente aos acontecimentos atuais que envolvem a Educação e a melhoria do ensino público;
+- leitura e interpretação de textos de alguns pensadores da Educação Nacional, com posterior apresentação dos mesmos pelos futuros professores, como práticas iniciais de organização de aulas e apresentação oral de ideias, a toda a sala.
+- entrevistas com alunos e professores da escola básica, pública e privada, a respeito dos itens anteriores.
+ 
+The individual's relationship with science. The relationship between science, technology, and education. Sociological aspects of education. Educational theories and the problem of marginalization. School and democracy. Education and violence. Education and quality of life. Education in the current press.
+
+The Practices as Curricular Components (PCC), always related to the discussions and readings carried out and articulating theoretical knowledge, comprise the following activities:
+- discussions, based on theoretical arguments and statistical data, about education in science and its technologies, in connection with the exercise of citizenship and also with the personal experiences of student-teachers during their own basic schooling;
+- examination, through written reviews and summaries, of some fundamental aspects of the culture of educational institutions, their practices, their social agents, their principles and values, and their relations with the educational theories studied;
+- readings and debates on educational issues covered by the national and/or international press, with the aim of fostering in future teachers a critical-reflective stance toward current events involving Education and the improvement of public schooling;
+- reading and interpretation of texts by some thinkers of National Education, followed by presentations of these texts by future teachers, as initial practices in lesson organization and oral presentation of ideas to the whole class;
+- interviews with students and teachers from public and private basic schools, addressing the topics above.
+ 
+
+ Em cada tópico a ser estudado o aspecto histórico será abordado, de acordo com sua relevância dentro do desenvolvimento histórico da biologia.
+Introdução ao Reino Animal		
+Sistemática e características gerais dos animais:
+- poríferas, cnidários, platelmintos, aschelmintos, anelídeos, moluscos, artrópodos e equinodermata e cordados.
+- os principais parasitas do homem e animais domésticos: contágio, ciclo evolutivo/vetores e epidemiologia.
+Anatomo-fisiologia animal comparada:
+- órgãos dos sentidos (audição, equilíbrio, visão, tato, olfato e paladar)
+- sistema cardiovascular e respiratório
+- sistema digestivo
+- sistema excretor e sistema endócrino
+- sistema reprodutor masculino e feminino
+
+Atividades dirigidas para articulação entre teoria e prática docente envolvendo:
+- Relacionar os conteúdos tratados em Biologia 2 (Zoologia e Sistemas) com os conteúdos previstos no currículo de Ciências da Natureza da Educação Básica;
+-  Análise crítica de kits experimentais com conteúdo de Biologia dirigidos para o ensino de Ciências da Natureza da Educação Básica;
+- Elaboração de plano de aula para Ciências da Natureza das séries finais do ensino fundamental que contemple os conteúdos tratados em Biologia 2.
+ 
+For each topic studied, the historical aspect will be addressed according to its relevance within the historical development of biology.
+Introduction to the Animal Kingdom.
+Systematics and general characteristics of animals:
+- Poriferans, cnidarians, platyhelminths, nematodes, annelids, mollusks, arthropods, echinoderms, and chordates;
+- The main parasites of humans and domestic animals: transmission, life cycle/vectors, and epidemiology;
+- Comparative Animal Anatomy and Physiology;
+- Sensory organs (hearing, balance, vision, touch, smell, and taste);
+- Cardiovascular and respiratory systems;
+- Digestive system;
+- Excretory and Endocrine systems;
+- Male and female reproductive systems.
+
+Activities designed to connect theory with teaching practice, including:
+- Relating the content covered in Biology 2 (Zoology and Systems) to the topics outlined in the Natural Sciences curriculum of Basic Education;
+- Critical analysis of experimental kits with Biology content aimed at teaching Natural Sciences in Basic Education;
+- Preparation of a lesson plan for Natural Sciences in the final years of elementary education that includes the content addressed in Biology 2.
