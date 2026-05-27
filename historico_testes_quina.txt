@@ -64,3 +64,28 @@ Jogo 4: [10, 37, 45, 64, 70] | Índice Real: 11,806,917 | Soma: 226
 Jogo 5: [10, 24, 29, 45, 56] | Índice Real: 11,548,268 | Soma: 164
 =====================================================================================
 
+
+=====================================================================================
+TESTE EXECUTADO EM: 27/05/2026 14:36:43
+=====================================================================================
+MODELO: MASTER HIPERCUBO FAST GREEDY CUBIC-15 (OTIMIZAÇÃO ULTRA-RÁPIDA)
+CONFIGURAÇÃO: Subespaço Amostral de 15 Dezenas Supremas, Interseção Máxima entre Jogos (<=2)
+TOTAL DE BILHETES AUDITADOS NO BACKTESTING: 7035
+
+RESULTADOS EM PERCENTUAIS CONSOLIDADOS:
+▶ DUQUES:  205 cartões ➔ 2.9140%  (Acaso Teórico: 2.7661%)
+▶ TERNOS:  10 cartões ➔ 0.1421%  (Acaso Teórico: 0.1152%)
+▶ QUADRAS: 1 cartões ➔ 0.0142%  (Acaso Teórico: 0.0016%)
+▶ QUINAS:  0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0000%)
+
+➔ GRUPO DE ELITE CONCENTRADO SELECIONADO (15 Dezenas Supremas):
+   10, 12, 18, 24, 29, 34, 37, 44, 45, 49, 52, 56, 59, 64, 70
+
+PALPITES EMITIDOS PARA O PRÓXIMO CONCURSO REAL:
+Jogo 1: [10, 29, 37, 44, 52] | Índice Real: 11,674,103 | Soma: 172
+Jogo 2: [10, 18, 44, 45, 49] | Índice Real: 11,371,391 | Soma: 166
+Jogo 3: [10, 18, 29, 59, 64] | Índice Real: 11,358,106 | Soma: 180
+Jogo 4: [10, 37, 45, 64, 70] | Índice Real: 11,806,917 | Soma: 226
+Jogo 5: [10, 24, 29, 45, 56] | Índice Real: 11,548,268 | Soma: 164
+=====================================================================================
+
