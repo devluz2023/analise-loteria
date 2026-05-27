@@ -1,0 +1,18 @@
+RELATÓRIO DE ACURÁCIA OPERACIONAL (RESTRIÇÕES DA PLANILHA DE BAYES):
+▶ Total de bilhetes gerados via MIP no teste: 2995
+---------------------------------------------------------------------------
+▶ TERNOS:  34 acertos ➔ 1.1352%
+▶ QUADRAS: 1 acertos ➔ 0.0334%
+▶ QUINAS:  0 acertos
+---------------------------------------------------------------------------
+
+[FASE 4] Computando restrições da matriz atual para o PRÓXIMO concurso real...
+
+===========================================================================
+      JOGOS GERADOS VIA MIP (SOLVER CBC) + CRITÉRIOS DE RESTRIÇÃO DE BAYES
+===========================================================================
+Jogo 1: [ 06, 07, 36, 38, 43, 59 ] ➔ Índice Real: 21.354.707
+Jogo 2: [ 06, 07, 29, 32, 36, 47 ] ➔ Índice Real: 21.331.980
+Jogo 3: [ 07, 36, 38, 42, 45, 47 ] ➔ Índice Real: 27.055.627
+Jogo 4: [ 06, 29, 36, 42, 45, 59 ] ➔ Índice Real: 24.055.236
+Jogo 5: [ 29, 32, 36, 38, 43, 45 ] ➔ Índice Real: 49.216.982

@@ -1,0 +1,44 @@
+
+=====================================================================================
+TESTE EXECUTADO EM: 27/05/2026 11:43:46
+=====================================================================================
+MODELO: MIP Sniper + Restrição Fuzzy de Sequência de Índices + Ruído Estocástico (0.1)
+CONFIGURAÇÃO DO SOLVER: Paridade Estrita, Soma Gaussiana Expandida (130-270), Anti-Repetição (<=2)
+TOTAL DE BILHETES AUDITADOS NO BACKTESTING: 7035
+
+RESULTADOS DO BACKTESTING:
+▶ DUQUES:  204 cartões ➔ 2.8998%  (Acaso Teórico: 2.7661%)
+▶ TERNOS:  7 cartões ➔ 0.0995%  (Acaso Teórico: 0.1152%)
+▶ QUADRAS: 0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0016%)
+▶ QUINAS:  0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0000%)
+
+PALPITES EMITIDOS PARA O PRÓXIMO CONCURSO REAL:
+Jogo 1: [1, 16, 30, 50, 69] | Índice Real: 847,079 | Soma: 166
+Jogo 2: [4, 16, 33, 49, 54] | Índice Real: 4,913,094 | Soma: 156
+Jogo 3: [26, 46, 47, 53, 66] | Índice Real: 20,825,309 | Soma: 238
+Jogo 4: [17, 18, 46, 53, 69] | Índice Real: 16,446,978 | Soma: 203
+Jogo 5: [8, 30, 35, 73, 80] | Índice Real: 9,803,961 | Soma: 226
+=====================================================================================
+
+
+=====================================================================================
+TESTE EXECUTADO EM: 27/05/2026 11:55:04
+=====================================================================================
+MODELO: MIP Sniper + Restrição de Índices + NOVA BARREIRA ANTI-SEQUÊNCIA (Max 2 colados)
+CONFIGURAÇÃO DO SOLVER: Paridade Estrita, Soma (130-270), Anti-Repetição (<=2)
+TOTAL DE BILHETES AUDITADOS NO BACKTESTING: 7035
+
+RESULTADOS EM PERCENTUAIS:
+▶ DUQUES:  205 cartões ➔ 2.9140%  (Acaso Teórico: 2.7661%)
+▶ TERNOS:  12 cartões ➔ 0.1706%  (Acaso Teórico: 0.1152%)
+▶ QUADRAS: 0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0016%)
+▶ QUINAS:  0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0000%)
+
+PALPITES EMITIDOS PARA O PRÓXIMO CONCURSO REAL:
+Jogo 1: [4, 30, 35, 46, 49] | Índice Real: 5,320,094 | Soma: 164
+Jogo 2: [6, 50, 64, 67, 69] | Índice Real: 7,903,198 | Soma: 256
+Jogo 3: [19, 32, 52, 75, 76] | Índice Real: 17,892,999 | Soma: 254
+Jogo 4: [15, 30, 41, 62, 78] | Índice Real: 15,540,534 | Soma: 226
+Jogo 5: [8, 13, 22, 69, 79] | Índice Real: 9,251,080 | Soma: 191
+=====================================================================================
+
