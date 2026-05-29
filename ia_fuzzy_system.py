@@ -25,6 +25,11 @@ split_idx = int(total_sorteios * 0.8)
 df_treino_base = df_cronologico.iloc[:split_idx].copy()
 df_teste_validacao = df_cronologico.iloc[split_idx:].copy()
 
+deltas = df_treino_base['Indice_Combinacao'].diff().dropna().abs()
+bins = np.linspace(0, 25000000, 100)
+
+counts, _ = np.histogram(deltas, bins=bins)
+probs_salto = counts / sum(counts)
 
 # =============================================================
 # 1. FUNÇÕES DE PERTINÊNCIA FUZZY (MEMBERSHIP FUNCTIONS)
@@ -41,6 +46,11 @@ def pertinencia_trapezoidal_direita(x, a, b):
     if x <= a: return 0.0
     if x >= b: return 1.0
     return (x - a) / (b - a)
+
+def verificar_verossimilhanca(idx_atual, idx_candidato):
+    salto = abs(idx_candidato - idx_atual)
+    idx_bin = np.digitize(salto, bins) - 1
+    return probs_salto[idx_bin] if 0 <= idx_bin < len(probs_salto) else 0.0
 
 
 # =============================================================
@@ -109,7 +119,7 @@ def amostrar_cinco_jogos_fuzzy(scores_fuzzy_ponto):
     """ Filtra as melhores dezenas fuzzy e monta os 5 cartões estáveis """
     dezenas_ordenadas = sorted(scores_fuzzy_ponto.items(), key=lambda x: x[1], reverse=True)
     universo_elite_fuzzy = [item[0] for item in dezenas_ordenadas[:26]]
-    
+    idx_atual = df_cronologico.iloc[-1]['Indice_Combinacao']
     jogos_filtrados = []
     tentativas = 0
     while len(jogos_filtrados) < 5 and tentativas < 10000:
@@ -122,7 +132,10 @@ def amostrar_cinco_jogos_fuzzy(scores_fuzzy_ponto):
             
         if jogo_e_valido_estritamente(palpite):
             if palpite not in jogos_filtrados:
-                jogos_filtrados.append(palpite)
+                idx_cand = encontrar_posicao_itertools(pd.Series(palpite, index=colunas_bolas))
+                if verificar_verossimilhanca(idx_atual, idx_cand) < 0.0001: continue
+                if jogo_e_valido_estritamente(palpite) and palpite not in jogos_filtrados:
+                    jogos_filtrados.append(palpite)
                 
     return jogos_filtrados
 

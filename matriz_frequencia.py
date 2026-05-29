@@ -6,7 +6,7 @@ from get_data import df_mega_sena
 def gerar_matriz():
         
     # 1. Configurações Iniciais
-    colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5', 'Bola6']
+    colunas_bolas = ['Bola1', 'Bola2', 'Bola3', 'Bola4', 'Bola5']
     total_concursos = len(df_mega_sena)
 
     print(f"Iniciando mapeamento estatístico sobre {total_concursos} concursos...")

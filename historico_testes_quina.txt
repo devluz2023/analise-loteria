@@ -89,3 +89,276 @@ Jogo 4: [10, 37, 45, 64, 70] | Índice Real: 11,806,917 | Soma: 226
 Jogo 5: [10, 24, 29, 45, 56] | Índice Real: 11,548,268 | Soma: 164
 =====================================================================================
 
+
+=====================================================================================
+TESTE EXECUTADO EM: 27/05/2026 14:39:11
+=====================================================================================
+MODELO: MASTER HIPERCUBO FAST GREEDY CUBIC-15 (OTIMIZAÇÃO ULTRA-RÁPIDA)
+CONFIGURAÇÃO: Subespaço Amostral de 15 Dezenas Supremas, Interseção Máxima entre Jogos (<=2)
+TOTAL DE BILHETES AUDITADOS NO BACKTESTING: 7035
+
+RESULTADOS EM PERCENTUAIS CONSOLIDADOS:
+▶ DUQUES:  205 cartões ➔ 2.9140%  (Acaso Teórico: 2.7661%)
+▶ TERNOS:  10 cartões ➔ 0.1421%  (Acaso Teórico: 0.1152%)
+▶ QUADRAS: 1 cartões ➔ 0.0142%  (Acaso Teórico: 0.0016%)
+▶ QUINAS:  0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0000%)
+
+➔ GRUPO DE ELITE CONCENTRADO SELECIONADO (15 Dezenas Supremas):
+   10, 12, 18, 24, 29, 34, 37, 44, 45, 49, 52, 56, 59, 64, 70
+
+PALPITES EMITIDOS PARA O PRÓXIMO CONCURSO REAL:
+Jogo 1: [10, 29, 37, 44, 52] | Índice Real: 11,674,103 | Soma: 172
+Jogo 2: [10, 18, 44, 45, 49] | Índice Real: 11,371,391 | Soma: 166
+Jogo 3: [10, 18, 29, 59, 64] | Índice Real: 11,358,106 | Soma: 180
+Jogo 4: [10, 37, 45, 64, 70] | Índice Real: 11,806,917 | Soma: 226
+Jogo 5: [10, 24, 29, 45, 56] | Índice Real: 11,548,268 | Soma: 164
+=====================================================================================
+
+
+=====================================================================================
+TESTE EXECUTADO EM: 27/05/2026 15:49:08
+=====================================================================================
+MODELO: MASTER HIPERCUBO COMPACTO CUBIC-12 (GRAFO NETWORK CLIQUE V2)
+CONFIGURAÇÃO: Subgrupo de 12 Dezenas Máximas Interconectadas, Overlap Estrito (<=2)
+TOTAL DE BILHETES AUDITADOS NO BACKTESTING: 7035
+
+RESULTADOS EM PERCENTUAIS CONSOLIDADOS:
+▶ DUQUES:  249 cartões ➔ 3.5394%  (Acaso Teórico: 2.7661%)
+▶ TERNOS:  12 cartões ➔ 0.1706%  (Acaso Teórico: 0.1152%)
+▶ QUADRAS: 0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0016%)
+▶ QUINAS:  0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0000%)
+
+➔ GRUPO DE ELITE COMPACTO SELECIONADO (12 Dezenas Interconectadas por Grafo):
+   08, 10, 26, 31, 34, 38, 41, 44, 46, 53, 72, 75
+
+PALPITES EMITIDOS PARA O PRÓXIMO CONCURSO REAL:
+Jogo 1: [8, 31, 34, 41, 44] | Índice Real: 9,820,639 | Soma: 158
+Jogo 2: [31, 38, 44, 53, 72] | Índice Real: 22,013,703 | Soma: 238
+Jogo 3: [8, 10, 26, 31, 75] | Índice Real: 9,105,592 | Soma: 150
+Jogo 4: [8, 10, 41, 53, 72] | Índice Real: 9,122,079 | Soma: 184
+Jogo 5: [8, 44, 46, 53, 75] | Índice Real: 9,983,227 | Soma: 226
+=====================================================================================
+
+
+=====================================================================================
+TESTE EXECUTADO EM: 27/05/2026 15:52:30
+=====================================================================================
+MODELO: MASTER CLIQUE V3 - FECHAMENTO DE STEINER COMBINATÓRIO 
+CONFIGURAÇÃO: Cobertura de Matriz Balanceada para 12 Números, MinMax Overlap Geométrico
+TOTAL DE BILHETES AUDITADOS NO BACKTESTING: 7035
+
+RESULTADOS EM PERCENTUAIS CONSOLIDADOS:
+▶ DUQUES:  229 cartões ➔ 3.2552%  (Acaso Teórico: 2.7661%)
+▶ TERNOS:  19 cartões ➔ 0.2701%  (Acaso Teórico: 0.1152%)
+▶ QUADRAS: 1 cartões ➔ 0.0142%  (Acaso Teórico: 0.0016%)
+▶ QUINAS:  0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0000%)
+
+➔ GRUPO DE ELITE RE-REFINADO (12 Dezenas Balanceadas por Bloco):
+   08, 10, 22, 26, 31, 34, 38, 44, 53, 54, 65, 76
+
+PALPITES EMITIDOS PARA O PRÓXIMO CONCURSO REAL:
+Jogo 1: [26, 31, 38, 44, 65] | Índice Real: 20,653,505 | Soma: 204
+Jogo 2: [10, 22, 31, 34, 53] | Índice Real: 11,493,246 | Soma: 150
+Jogo 3: [8, 53, 54, 65, 76] | Índice Real: 10,028,213 | Soma: 256
+Jogo 4: [8, 31, 34, 44, 65] | Índice Real: 9,820,771 | Soma: 182
+Jogo 5: [10, 31, 38, 44, 53] | Índice Real: 11,712,989 | Soma: 176
+=====================================================================================
+
+
+=====================================================================================
+TESTE EXECUTADO EM: 27/05/2026 15:56:55
+=====================================================================================
+MODELO: MASTER CLIQUE V3 - TARGET QUINA (CONCENTRAÇÃO TOTAL)
+CONFIGURAÇÃO: Cobertura de Alta Interseção (Overlap Mínimo >=3 com a Linha Suprema)
+TOTAL DE BILHETES AUDITADOS NO BACKTESTING: 7035
+
+RESULTADOS EM PERCENTUAIS CONSOLIDADOS:
+▶ DUQUES:  236 cartões ➔ 3.3547%  (Acaso Teórico: 2.7661%)
+▶ TERNOS:  27 cartões ➔ 0.3838%  (Acaso Teórico: 0.1152%)
+▶ QUADRAS: 0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0016%)
+▶ QUINAS:  0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0000%)
+
+➔ GRUPO DE ELITE ALVO (12 Dezenas Ponderadas):
+   02, 08, 10, 22, 26, 31, 34, 38, 42, 44, 53, 65
+
+PALPITES EMITIDOS PARA O PRÓXIMO CONCURSO REAL:
+Jogo 1: [26, 31, 38, 44, 65] | Índice Real: 20,653,505 | Soma: 204
+Jogo 2: [8, 26, 31, 44, 65] | Índice Real: 9,713,152 | Soma: 174
+Jogo 3: [8, 31, 34, 44, 65] | Índice Real: 9,820,771 | Soma: 182
+Jogo 4: [8, 31, 38, 44, 65] | Índice Real: 9,824,471 | Soma: 186
+Jogo 5: [10, 31, 38, 44, 65] | Índice Real: 11,713,001 | Soma: 188
+=====================================================================================
+
+
+=====================================================================================
+TESTE EXECUTADO EM: 27/05/2026 15:59:59
+=====================================================================================
+MODELO: MASTER CLIQUE V3 - TARGET QUINA (CONCENTRAÇÃO TOTAL)
+CONFIGURAÇÃO: Cobertura de Alta Interseção (Overlap Mínimo >=3 com a Linha Suprema)
+TOTAL DE BILHETES AUDITADOS NO BACKTESTING: 7035
+
+RESULTADOS EM PERCENTUAIS CONSOLIDADOS:
+▶ DUQUES:  236 cartões ➔ 3.3547%  (Acaso Teórico: 2.7661%)
+▶ TERNOS:  18 cartões ➔ 0.2559%  (Acaso Teórico: 0.1152%)
+▶ QUADRAS: 0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0016%)
+▶ QUINAS:  0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0000%)
+
+➔ GRUPO DE ELITE ALVO (12 Dezenas Ponderadas):
+   02, 10, 22, 31, 34, 41, 42, 44, 53, 54, 72, 76
+
+PALPITES EMITIDOS PARA O PRÓXIMO CONCURSO REAL:
+Jogo 1: [10, 22, 31, 34, 41] | Índice Real: 11,493,234 | Soma: 138
+Jogo 2: [22, 31, 34, 41, 72] | Índice Real: 19,230,095 | Soma: 200
+Jogo 3: [10, 31, 34, 41, 54] | Índice Real: 11,709,179 | Soma: 170
+Jogo 4: [31, 34, 41, 44, 72] | Índice Real: 21,960,170 | Soma: 222
+Jogo 5: [10, 22, 31, 41, 72] | Índice Real: 11,493,559 | Soma: 176
+=====================================================================================
+
+
+=====================================================================================
+TESTE EXECUTADO EM: 27/05/2026 16:04:35
+=====================================================================================
+MODELO: MASTER CLIQUE V3 - QUINA ABSOLUTE TARGET (MONITORAMENTO SUPREMO)
+CONFIGURAÇÃO: Varredura de 1000 Subgrafos, Overlap Mínimo Fixo em 4 Números (Crivo Sniper)
+TOTAL DE BILHETES AUDITADOS NO BACKTESTING: 7035
+
+RESULTADOS EM PERCENTUAIS CONSOLIDADOS:
+▶ DUQUES:  257 cartões ➔ 3.6532%  (Acaso Teórico: 2.7661%)
+▶ TERNOS:  22 cartões ➔ 0.3127%  (Acaso Teórico: 0.1152%)
+▶ QUADRAS: 0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0016%)
+▶ QUINAS:  0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0000%)
+
+➔ GRUPO DE ELITE ABSOLUTO SELECIONADO (12 Números de Amarração Total):
+   08, 10, 22, 23, 26, 31, 38, 41, 42, 54, 63, 72
+
+PALPITES EMITIDOS PARA O PRÓXIMO CONCURSO REAL:
+Jogo 1: [10, 22, 31, 63, 72] | Índice Real: 11,494,164 | Soma: 198
+Jogo 2: [10, 22, 31, 54, 63] | Índice Real: 11,493,966 | Soma: 180
+Jogo 3: [10, 22, 31, 38, 63] | Índice Real: 11,493,430 | Soma: 164
+Jogo 4: [10, 22, 23, 31, 63] | Índice Real: 11,482,279 | Soma: 149
+Jogo 5: [10, 22, 26, 31, 63] | Índice Real: 11,486,735 | Soma: 152
+=====================================================================================
+
+
+=====================================================================================
+TESTE EXECUTADO EM: 27/05/2026 16:11:49
+=====================================================================================
+MODELO: RESOLUÇÃO FINAL QUINA - MATRIZ DE DESIGN COMBINATÓRIO (10 JOGOS FECHADOS)
+CONFIGURAÇÃO: Subgrupo de 12 Dezenas por Grafo, Overlap Otimizado Controlado (<=3)
+TOTAL DE BILHETES AUDITADOS NO BACKTESTING: 14070
+
+RESULTADOS EM PERCENTUAIS CONSOLIDADOS:
+▶ DUQUES:  487 cartões ➔ 3.4613%  (Acaso Teórico: 2.7661%)
+▶ TERNOS:  34 cartões ➔ 0.2416%  (Acaso Teórico: 0.1152%)
+▶ QUADRAS: 0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0016%)
+▶ QUINAS:  0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0000%)
+
+➔ GRUPO DE ELITE SELECIONADO (12 Dezenas Supremas):
+   08, 10, 26, 31, 34, 42, 43, 53, 54, 63, 72, 75
+
+PALPITES EMITIDOS PARA O PRÓXIMO CONCURSO REAL:
+Jogo 01: [8, 10, 31, 34, 63] | Índice Real: 9,112,101 | Soma: 146
+Jogo 02: [26, 42, 43, 72, 75] | Índice Real: 20,795,888 | Soma: 258
+Jogo 03: [10, 42, 54, 63, 75] | Índice Real: 11,860,446 | Soma: 244
+Jogo 04: [8, 26, 31, 53, 72] | Índice Real: 9,713,438 | Soma: 190
+Jogo 05: [8, 34, 43, 54, 75] | Índice Real: 9,877,187 | Soma: 214
+Jogo 06: [10, 26, 43, 53, 63] | Índice Real: 11,612,613 | Soma: 195
+Jogo 07: [31, 43, 54, 63, 72] | Índice Real: 22,064,343 | Soma: 263
+Jogo 08: [31, 34, 42, 53, 54] | Índice Real: 21,961,134 | Soma: 214
+Jogo 09: [10, 34, 53, 72, 75] | Índice Real: 11,770,859 | Soma: 244
+Jogo 10: [8, 10, 26, 63, 75] | Índice Real: 9,106,632 | Soma: 182
+=====================================================================================
+
+
+=====================================================================================
+TESTE EXECUTADO EM: 27/05/2026 16:17:20
+=====================================================================================
+MODELO: RESOLUÇÃO FINAL QUINA - MATRIZ DE DESIGN COMBINATÓRIO (10 JOGOS FECHADOS)
+CONFIGURAÇÃO: Subgrupo de 12 Dezenas por Grafo, Overlap Otimizado Controlado (<=3)
+TOTAL DE BILHETES AUDITADOS NO BACKTESTING: 14070
+
+RESULTADOS EM PERCENTUAIS CONSOLIDADOS:
+▶ DUQUES:  519 cartões ➔ 3.6887%  (Acaso Teórico: 2.7661%)
+▶ TERNOS:  27 cartões ➔ 0.1919%  (Acaso Teórico: 0.1152%)
+▶ QUADRAS: 2 cartões ➔ 0.0142%  (Acaso Teórico: 0.0016%)
+▶ QUINAS:  0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0000%)
+
+➔ GRUPO DE ELITE SELECIONADO (12 Dezenas Supremas):
+   02, 08, 10, 22, 23, 26, 31, 34, 41, 42, 54, 72
+
+PALPITES EMITIDOS PARA O PRÓXIMO CONCURSO REAL:
+Jogo 01: [10, 22, 31, 34, 41] | Índice Real: 11,493,234 | Soma: 138
+Jogo 02: [23, 26, 31, 42, 72] | Índice Real: 19,517,524 | Soma: 194
+Jogo 03: [8, 23, 31, 34, 54] | Índice Real: 9,633,977 | Soma: 150
+Jogo 04: [2, 31, 41, 54, 72] | Índice Real: 2,707,578 | Soma: 200
+Jogo 05: [10, 23, 41, 42, 54] | Índice Real: 11,532,124 | Soma: 170
+Jogo 06: [8, 22, 23, 41, 72] | Índice Real: 9,594,193 | Soma: 166
+Jogo 07: [8, 31, 34, 41, 72] | Índice Real: 9,820,667 | Soma: 186
+Jogo 08: [10, 22, 23, 31, 72] | Índice Real: 11,482,288 | Soma: 158
+Jogo 09: [10, 23, 26, 31, 54] | Índice Real: 11,515,986 | Soma: 144
+Jogo 10: [8, 10, 31, 41, 54] | Índice Real: 9,112,386 | Soma: 144
+=====================================================================================
+
+
+=====================================================================================
+TESTE EXECUTADO EM: 27/05/2026 16:24:35
+=====================================================================================
+MODELO: ANALISADOR ESPACIAL BRUTE-FORCE DE ELITE (VARREDURA COMPLETA)
+CONFIGURAÇÃO: Avaliação de TODAS as combinações purificadas geradas pelas 12 dezenas de rede
+TOTAL DE BILHETES AVALIADOS NO BACKTESTING GLOBAL: 574593
+
+RESULTADOS REAIS EM PERCENTUAIS DO ESPAÇO COMPLETO:
+▶ DUQUES:  19173 cartões ➔ 3.3368%  (Acaso Teórico: 2.7661%)
+▶ TERNOS:  1159 cartões ➔ 0.2017%  (Acaso Teórico: 0.1152%)
+▶ QUADRAS: 36 cartões ➔ 0.0063%  (Acaso Teórico: 0.0016%)
+▶ QUINAS:  0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0000%)
+
+➔ GRUPO DE ELITE BASE DO GRAFO (12 Dezenas Supremas):
+   08, 10, 22, 31, 34, 38, 46, 54, 63, 65, 72, 76
+
+➔ PORTFÓLIO ATUAL EMITIDO: 251 jogos gerados.
+   (A lista completa com todas as linhas foi exportada para o arquivo 'palpites_bloco_quina.txt')
+=====================================================================================
+
+
+=====================================================================================
+TESTE EXECUTADO EM: 27/05/2026 16:30:12
+=====================================================================================
+MODELO: CUBIC-15 TOTAL SPACE (ANÁLISE DE FORÇA BRUTA EXPANDIDA)
+CONFIGURAÇÃO: Varredura de todo o subespaço gerado por 15 números (3.003 originais)
+TOTAL DE BILHETES COMPILADOS NO BACKTESTING HISTÓRICO: 2212700
+
+RESULTADOS REAIS EM PERCENTUAIS DO ESPAÇO COMPLETO:
+▶ DUQUES:  68414 cartões ➔ 3.0919%  (Acaso Teórico: 2.7661%)
+▶ TERNOS:  3386 cartões ➔ 0.1530%  (Acaso Teórico: 0.1152%)
+▶ QUADRAS: 75 cartões ➔ 0.0034%  (Acaso Teórico: 0.0016%)
+▶ QUINAS:  0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0000%)
+
+➔ GRUPO DE ELITE EXPANDIDO DO GRAFO (15 Dezenas Supremas):
+   01, 08, 10, 22, 23, 26, 29, 31, 38, 44, 53, 63, 69, 72, 75
+
+➔ VOLUMETRIA EMITIDA: 1878 jogos purificados gerados.
+   (A listagem completa foi exportada para o arquivo 'palpites_bloco_quina.txt')
+=====================================================================================
+
+
+=====================================================================================
+TESTE EXECUTADO EM: 27/05/2026 16:35:55
+=====================================================================================
+MODELO: MONSTRO SNIPER - EXTRAÇÃO DE 1 VOLANTE DE MÁXIMA ENERGIA COMBINATÓRIA
+CONFIGURAÇÃO: Varredura de todo o espaço Cubic-15 com isolamento de Linha Áurea Única
+TOTAL DE BILHETES AUDITADOS NO BACKTESTING (1 POR CONCURSO): 1407
+
+RESULTADOS CONSOLIDADOS DO PORTFÓLIO DE VOLANTE ÚNICO:
+▶ DUQUES:  54 cartões ➔ 3.8380%  (Acaso Teórico: 2.7661%)
+▶ TERNOS:  2 cartões ➔ 0.1421%  (Acaso Teórico: 0.1152%)
+▶ QUADRAS: 0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0016%)
+▶ QUINAS:  0 cartões ➔ 0.0000%  (Acaso Teórico: 0.0000%)
+
+➔ GRUPO DE ELITE BASE DO GRAFO (15 Dezenas Analisadas):
+   08, 10, 23, 26, 31, 34, 41, 42, 43, 44, 46, 54, 63, 65, 72
+
+➔ PALPITE SUPREMO EMITIDO (SEU 1 VOLANTE REAL):
+   [8, 31, 34, 41, 44] | Índice Real: 9,820,639 | Soma: 158
+=====================================================================================
+

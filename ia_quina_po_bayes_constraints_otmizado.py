@@ -8,12 +8,13 @@ import os
 import itertools
 from collections import Counter
 from datetime import datetime
+from pulp import LpProblem, LpMaximize, LpVariable, lpSum, LpStatus, PULP_CBC_CMD
 
-# === CONFIGURAÇÃO DO AMBINETE ===
+# === CONFIGURAÇÃO DO AMBIENTE ===
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 print("=" * 85)
-print("  INICIALIZANDO MOTOR MASTER FAST: HIPERCUBO CUBIC-15 COM SELETOR GULOSO O(N)")
+print("  INICIALIZANDO MOTOR MASTER: HIPERCUBO COMBINATÓRIO DE ELITE CUBIC-15")
 print("=" * 85)
 
 # === DOWNLOAD DE DADOS ===
@@ -38,6 +39,7 @@ def jogo_para_indice(jogo):
         atual = bola + 1
     return idx
 
+df_cronologico['Indice_Combinacao'] = [jogo_para_indice(sorted([int(row[c]) for c in colunas_bolas])) for _, row in df_cronologico.iterrows()]
 df_cronologico['Indice_Combinacao'] = [jogo_para_indice(sorted([int(row[c]) for c in colunas_bolas])) for _, row in df_cronologico.iterrows()]
 
 # =============================================================
@@ -67,7 +69,7 @@ def calcular_probabilidades_markov(df_subset):
         total = jejum_total.get(j_atual, 1)
         saiu = transicao_contagem.get((j_atual, 0), 0)
         probs[d] = saiu / total
-    return probs
+    return probs, atraso_atual
 
 # =============================================================
 # 3. MATRIZ HISTÓRICA DE CO-OCORRÊNCIA
@@ -101,9 +103,10 @@ def avaliar_coerencia_indices_fuzzy(jogo, idx_n1, idx_n2):
     return True
 
 # =============================================================
-# 5. SELETOR GULOSO ULTRA-RÁPIDO (SUBSTITUTO DO SOLVER MIP COMBINATÓRIO)
+# 5. [UPGRADE SUPREMO] SOLVER MIP SOBRE ESPAÇO COMBINATÓRIO DE ELITE
 # =============================================================
-def solver_hipercubo_fast_greedy(probs_markov, afinidades_vizinhas, idx_n1, idx_n2, n_jogos=5):
+def solver_hipercubo_elite_mip(probs_markov, afinidades_vizinhas, idx_n1, idx_n2, n_jogos=5):
+    # Passo 1: Vincula e calcula o score combinado (70% Exaustão / 30% Afinidade)
     dezenas_ancora = sorted(probs_markov.items(), key=lambda x: x[1], reverse=True)[:10]
     ancoras = [d[0] for d in dezenas_ancora]
     
@@ -112,56 +115,65 @@ def solver_hipercubo_fast_greedy(probs_markov, afinidades_vizinhas, idx_n1, idx_
         score_afinidade = sum(afinidades_vizinhas[d, a] for a in ancoras)
         scores_finais[d] = (probs_markov[d] * 0.7) + (score_afinidade * 0.3)
         
+    # Passo 2: Extrai estritamente o Condensado de Elite de 15 Dezenas Supremas
     dezenas_elite_15 = [item[0] for item in sorted(scores_finais.items(), key=lambda x: x[1], reverse=True)[:15]]
+    
+    # Passo 3: Compila o subespaço amostral do Hipercubo (todas as 3.003 combinações possíveis de 5)
     pool_combinacoes = list(itertools.combinations(sorted(dezenas_elite_15), 5))
     
+    # Passo 4: Purificação rigorosa do pool através dos crivos analíticos
     pool_purificado = []
     scores_pool = []
     
     for combo in pool_combinacoes:
         jogo = list(combo)
+        
+        # Filtros de Paridade Básica
         if sum(1 for d in jogo if d % 2 == 0) not in [2, 3]: continue
+        # Filtros de Soma Gaussiana Expandida
         if not (130 <= sum(jogo) <= 270): continue
+        # Filtro Anti-Sequência Rígido
         if not validar_anti_sequencia(jogo): continue
+        # Filtro de Derivada Temporal de Índices
         if not avaliar_coerencia_indices_fuzzy(jogo, idx_n1, idx_n2): continue
             
         pool_purificado.append(jogo)
         scores_pool.append(sum(scores_finais[d] for d in jogo))
         
+    # Fallback de segurança para contingência espacial
     if len(pool_purificado) < n_jogos:
         return [sorted(random.sample(dezenas_elite_15, 5)) for _ in range(n_jogos)]
         
-    # --- PROCESSO GULOSO O(N): FILTRAGEM INSTANTÂNEA DE OVERLAP ---
-    indices_ordenados = np.argsort(scores_pool)[::-1]
-    jogos_escolhidos = []
+    # Passo 5: Otimização Inteira de Portfólio (MIP Unificado)
+    prob = LpProblem("MIP_Hipercubo_Quina", LpMaximize)
+    x = LpVariable.dicts("combo", range(len(pool_purificado)), cat="Binary")
     
-    for idx in indices_ordenados:
-        jogo_candidato = pool_purificado[idx]
-        valido = True
-        for jogo_eleito in jogos_escolhidos:
-            # Força interseção máxima de no máximo 2 números entre os jogos
-            if len(set(jogo_candidato) & set(jogo_eleito)) > 2:
-                valido = False
-                break
-        if valido:
-            jogos_escolhidos.append(jogo_candidato)
-        if len(jogos_escolhidos) == n_jogos:
-            break
+    # Objetivo: Maximizar a densidade energética do bloco de jogos escolhidos
+    prob += lpSum(scores_pool[c] * x[c] for c in range(len(pool_purificado)))
+    prob += lpSum(x[c] for c in range(len(pool_purificado))) == n_jogos
+    
+    # [REDE DE ARRASTAMENTO]: Garante cobertura simétrica limitando a repetição a no máximo 2 dezenas entre os jogos gerados
+    for c1, c2 in itertools.combinations(range(len(pool_purificado)), 2):
+        overlap = len(set(pool_purificado[c1]) & set(pool_purificado[c2]))
+        if overlap > 2:
+            prob += x[c1] + x[c2] <= 1
             
-    # Garantia de preenchimento se a malha de overlap for ultra restrita
+    prob.solve(PULP_CBC_CMD(msg=False))
+    
+    jogos_escolhidos = []
+    if LpStatus[prob.status] == "Optimal":
+        jogos_escolhidos = [pool_purificado[c] for c in range(len(pool_purificado)) if x[c].varValue == 1]
+        
     if len(jogos_escolhidos) < n_jogos:
-        for idx in indices_ordenados:
-            if pool_purificado[idx] not in jogos_escolhidos:
-                jogos_escolhidos.append(pool_purificado[idx])
-            if len(jogos_escolhidos) == n_jogos:
-                break
-                
+        indices_ordenados = np.argsort(scores_pool)[::-1]
+        jogos_escolhidos = [pool_purificado[idx] for idx in indices_ordenados[:n_jogos]]
+        
     return [sorted(j) for j in jogos_escolhidos]
 
 # =============================================================
-# 6. BACKTESTING CEGO VELOZ
+# 6. BACKTESTING CEGO DE ALTA VOLUMETRIA
 # =============================================================
-print("\n[FASE 2] Rodando Backtesting Cego por Portfólio Simultâneo O(N)...")
+print("\n[FASE 2] Rodando Backtesting Cego por Portfólio Simultâneo...")
 split_idx = int(len(df_cronologico) * 0.8)
 total_duques, total_ternos, total_quadras, total_quinas = 0, 0, 0, 0
 total_bilhetes = 0
@@ -170,12 +182,12 @@ for i in range(split_idx, len(df_cronologico)):
     df_passado = df_cronologico.iloc[:i]
     df_passado_recente = df_passado.iloc[-JANELA_MEMORIA_MARKOV:] if len(df_passado) > JANELA_MEMORIA_MARKOV else df_passado
     
-    probs_m = calcular_probabilidades_markov(df_passado_recente)
+    probs_m, _ = calcular_probabilidades_markov(df_passado_recente)
     
     idx_n1_ponto = df_passado.iloc[-1]['Indice_Combinacao'] if len(df_passado) > 0 else 0
     idx_n2_ponto = df_passado.iloc[-2]['Indice_Combinacao'] if len(df_passado) > 1 else 0
             
-    jogos = solver_hipercubo_fast_greedy(probs_m, matriz_coocorrencia, idx_n1_ponto, idx_n2_ponto, n_jogos=5)
+    jogos = solver_hipercubo_elite_mip(probs_m, matriz_coocorrencia, idx_n1_ponto, idx_n2_ponto, n_jogos=5)
     
     gabarito = set([int(df_cronologico.iloc[i][c]) for c in colunas_bolas])
     for j in jogos:
@@ -193,11 +205,12 @@ total_bilhetes = max(1, total_bilhetes)
 # =============================================================
 print("\n[FASE 3] Sintonizando o Hipercubo para o próximo concurso...")
 df_recente = df_cronologico.iloc[-JANELA_MEMORIA_MARKOV:]
-probs_finais = calcular_probabilidades_markov(df_recente)
+probs_finais, atraso_hoje_real = calcular_probabilidades_markov(df_recente)
 
 idx_n1_real = df_cronologico.iloc[-1]['Indice_Combinacao']
 idx_n2_real = df_cronologico.iloc[-2]['Indice_Combinacao']
 
+# Extração visual das 15 dezenas para auditoria no console
 dezenas_ancora_finais = sorted(probs_finais.items(), key=lambda x: x[1], reverse=True)[:10]
 ancoras_finais = [d[0] for d in dezenas_ancora_finais]
 scores_futuros = {}
@@ -206,7 +219,7 @@ for d in range(1, 81):
     scores_futuros[d] = (probs_finais[d] * 0.7) + (score_afinidade * 0.3)
 dezenas_master_15 = [item[0] for item in sorted(scores_futuros.items(), key=lambda x: x[1], reverse=True)[:15]]
 
-palpites = solver_hipercubo_fast_greedy(probs_finais, matriz_coocorrencia, idx_n1_real, idx_n2_real, n_jogos=5)
+palpites = solver_hipercubo_elite_mip(probs_finais, matriz_coocorrencia, idx_n1_real, idx_n2_real, n_jogos=5)
 
 # =============================================================
 # 8. GRAVAÇÃO E INDEXAÇÃO NO HISTÓRICO TXT
@@ -217,7 +230,7 @@ relatorio_txt = f"""
 =====================================================================================
 TESTE EXECUTADO EM: {data_hora_atual}
 =====================================================================================
-MODELO: MASTER HIPERCUBO FAST GREEDY CUBIC-15 (OTIMIZAÇÃO ULTRA-RÁPIDA)
+MODELO: MASTER HIPERCUBO COMBINATÓRIO CUBIC-15 (FUSÃO COLETIVA MIP)
 CONFIGURAÇÃO: Subespaço Amostral de 15 Dezenas Supremas, Interseção Máxima entre Jogos (<=2)
 TOTAL DE BILHETES AUDITADOS NO BACKTESTING: {total_bilhetes}
 
@@ -243,4 +256,4 @@ print(relatorio_txt)
 with open("historico_testes_quina.txt", "a", encoding="utf-8") as f:
     f.write(relatorio_txt)
 
-print("-> Sucesso absoluto! Relatório gravado instantaneamente no arquivo 'historico_testes_quina.txt'.")
+print("-> Sucesso! A nova folha de acurácia do Hipercubo foi adicionada ao arquivo 'historico_testes_quina.txt'.")
