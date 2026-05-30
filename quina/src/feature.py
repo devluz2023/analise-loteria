@@ -19,7 +19,18 @@ for col in df_matriz.columns:
         valores = pd.to_numeric(df_matriz[col], errors='coerce').fillna(0)
         mapas_estatisticos[col] = dict(zip(df_matriz['Dezena'], valores))
 
+def contar_pares(comb_list):
+    return len([n for n in comb_list if int(n) % 2 == 0])
 
+def calcular_acertos_proximo(row_idx, df_sorteios):
+    # Se for o último sorteio, não tem próximo
+    if row_idx >= len(df_sorteios) - 1:
+        return 0
+    
+    atual = set([int(df_sorteios.loc[row_idx, c]) for c in colunas_bolas])
+    proximo = set([int(df_sorteios.loc[row_idx + 1, c]) for c in colunas_bolas])
+    
+    return len(atual.intersection(proximo))
 
 # === 2. FUNÇÕES ESSENCIAIS ===
 def calcular_indice(comb_list):
@@ -114,6 +125,25 @@ cols_soma_dinamicas = [
 # Junta tudo
 colunas_finais = colunas_fixas + cols_soma_dinamicas
 
+
+# B. Criar a coluna no dataframe principal
+df['Similaridade_Proximo'] = [calcular_acertos_proximo(i, df) for i in range(len(df))]
+
+# C. Integrar no seu df_elite
+# Precisamos mapear essa similaridade média para cada combinação
+mapa_similaridade = df.groupby('Indice')['Similaridade_Proximo'].mean().to_dict()
+
+df['Similaridade_Proximo'] = [calcular_acertos_proximo(i, df) for i in range(len(df))]
+
+# Mapeamos para o df_elite (usando o índice para vincular)
+mapa_similaridade = df.groupby('Indice')['Similaridade_Proximo'].mean().to_dict()
+df_elite['Similaridade_Media'] = df_elite['Indice'].map(mapa_similaridade).fillna(0)
+
+# B. Agora reconstruímos o df_resultado (Isso vai popular o df_resultado com a nova coluna)
+df_resultado = df_elite[df_elite['Frequencia'] > 0].sort_values(by='Distancia')
+df_resultado = df_resultado[
+    df_resultado['Combinacao'].apply(lambda c: 2 <= contar_pares(c) <= 3)
+]
 # === EXIBIÇÃO ===
 print("\n=== DIAGNÓSTICO FILTRADO (SOMENTE ÍNDICES DE JEJUM) ===")
 print(df_resultado[colunas_finais].head(15).to_string(index=False))
