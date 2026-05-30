@@ -2,8 +2,7 @@ import pandas as pd
 import numpy as np
 import math
 import optuna
-from datetime import datetime
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, BayesianRidge
 from catboost import CatBoostRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
@@ -18,7 +17,6 @@ target = df_resultado['Indice']
 
 X_train, X_test, y_train, y_test = train_test_split(df_limpo, target, test_size=0.1, random_state=42)
 
-# Normalização para LSTM
 scaler = MinMaxScaler()
 X_scaled = scaler.fit_transform(df_limpo)
 
@@ -42,24 +40,34 @@ def indice_para_combinacao(n, k, index):
             else: index -= count
     return comb
 
-def avaliar(model, X_test, y_test, nome, is_lstm=False):
-    preds = model.predict(X_test, verbose=0) if is_lstm else model.predict(X_test)
+# AQUI FOI CORRIGIDO: Adicionado 'is_lstm' como argumento opcional
+def avaliar(preds, y_test, nome, is_lstm=False):
+    preds = preds.flatten()
     total = len(y_test)
     acertos = {"Terno": 0, "Quadra": 0, "Quina": 0, "Sena": 0}
     
     for pred, actual in zip(preds, y_test):
-        p = set(indice_para_combinacao(60, 6, int(max(0, min(pred, 50063859)))))
+        p = set(indice_para_combinacao(60, 6, int(max(0, min(float(pred), 50063859)))))
         r = set(indice_para_combinacao(60, 6, int(actual)))
         inter = len(p.intersection(r))
         if inter >= 3:
             nome_acerto = ["", "", "", "Terno", "Quadra", "Quina", "Sena"][inter]
             acertos[nome_acerto] += 1
             
-    print(f"\n--- Performance {nome} ({total} testes) ---")
+    print(f"\n--- Performance: {nome} ({total} testes) ---")
     for k, v in acertos.items():
         print(f"{k}: {v} acertos ({(v/total)*100:.4f}%)")
 
-# === 3. OTIMIZAÇÃO COM OPTUNA ===
+# === 3. TREINAMENTO DOS 4 MODELOS ===
+print("Treinando modelos (Linear, Bayesiano, CatBoost, LSTM)...")
+
+# 1. Linear
+model_lr = LinearRegression().fit(X_train, y_train)
+
+# 2. Bayesiano
+model_bayes = BayesianRidge().fit(X_train, y_train)
+
+# 3. CatBoost (Otimizado com Optuna)
 def objective_cb(trial):
     params = {'iterations': trial.suggest_int('iterations', 100, 500), 'depth': trial.suggest_int('depth', 4, 8)}
     model = CatBoostRegressor(**params, verbose=False).fit(X_train, y_train)
@@ -67,20 +75,15 @@ def objective_cb(trial):
 
 study = optuna.create_study(direction='minimize')
 study.optimize(objective_cb, n_trials=10)
-
-# === 4. TREINAMENTO FINAL ===
-model_lr = LinearRegression().fit(X_train, y_train)
 model_cb = CatBoostRegressor(**study.best_params, verbose=False).fit(X_train, y_train)
 
+# 4. LSTM (Otimizado)
 model_lstm = Sequential([Input(shape=(X_seq.shape[1], X_seq.shape[2])), LSTM(64), Dense(1)])
 model_lstm.compile(optimizer='adam', loss='mse')
 model_lstm.fit(X_seq_train, y_seq_train, epochs=30, verbose=0)
 
-# === 5. AVALIAÇÃO E SUGESTÃO ===
-avaliar(model_lr, X_test, y_test, "Regressão Linear")
-avaliar(model_cb, X_test, y_test, "CatBoost")
-avaliar(model_lstm, X_seq_test, y_seq_test, "LSTM", is_lstm=True)
-
-ultima = df_limpo.iloc[[-1]]
-sugestao = indice_para_combinacao(60, 6, int(model_cb.predict(ultima)[0]))
-print(f"\nSugestão Final (CatBoost Otimizado): {sugestao}")
+# === 4. COMPARAÇÃO FINAL ===
+avaliar(model_lr.predict(X_test), y_test, "Regressão Linear")
+avaliar(model_bayes.predict(X_test), y_test, "Regressão Bayesiana")
+avaliar(model_cb.predict(X_test), y_test, "CatBoost")
+avaliar(model_lstm.predict(X_seq_test, verbose=0), y_seq_test, "LSTM", is_lstm=True)
