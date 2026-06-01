@@ -5,7 +5,7 @@ import random
 from catboost import CatBoostRegressor
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
-
+from sklearn.model_selection import GridSearchCV
 # === 1. CARREGAMENTO E PREPARAÇÃO ===
 df = pd.read_excel("diagnostico_lotofacil_filtrado.xlsx")
 df_limpo = df.select_dtypes(include=[np.number]).fillna(0)
@@ -53,10 +53,19 @@ def modelo_po():
     prob.solve(pulp.PULP_CBC_CMD(msg=0))
     return set([int(i) for i in range(1, 26) if pulp.value(x[i]) == 1])
 
+modelo_base = CatBoostRegressor(verbose=0)
+param_grid = {'iterations': [50, 100, 200], 'learning_rate': [0.01, 0.05, 0.1], 'depth': [4, 6, 8]}
+grid_search = GridSearchCV(estimator=modelo_base, param_grid=param_grid, cv=3, n_jobs=-1)
+grid_search.fit(X, y)
+modelo_cb_final = grid_search.best_estimator_ # Este é o modelo já treinado!
+
+# 2. FUNÇÃO SIMPLES QUE APENAS FAZ A PREVISÃO
 def modelo_catboost():
-    pesos = modelo_cb.predict(X.iloc[[-1]]) 
+    # Usa o modelo já treinado globalmente
+    pesos = modelo_cb_final.predict(X.iloc[[-1]]) 
     sugestao = np.argsort(pesos[0])[-15:] + 1
     return set(sugestao)
+
 
 def modelo_lstm():
     dados_globais = df_limpo.values
