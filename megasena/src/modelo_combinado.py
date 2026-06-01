@@ -53,13 +53,7 @@ class EnsembleRegressor:
         # Combina as previsões no meta-modelo
         return self.meta.predict(np.column_stack((p_cb, p_lstm)))
 
-def aplicar_filtro_markov(sugestao_cand, ultimo_sorteio, threshold=0.01):
-    prob = mc.pontuar_jogo(sugestao_cand, ultimo_sorteio)
-    if prob >= threshold:
-        return sugestao_cand, prob
-    else:
-        # Se a probabilidade for muito baixa, o jogo é "estaticamente improvável"
-        return None, prob
+
 
 
 
@@ -329,18 +323,22 @@ if vencedor == 'Ensemble':
 else:
     print(f"Sugestão Final: {sugestao_po}")
 
-scaler_ae = MinMaxScaler()
-dados_norm = scaler_ae.fit_transform(df_limpo.values)
-autoencoder = criar_autoencoder(dados_norm.shape[1])
-autoencoder.fit(dados_norm, dados_norm, epochs=50, verbose=0)
 
 
+def extrair_features(dezenas, df_modelo):
+    """
+    Transforma as 6 dezenas nas mesmas colunas estatísticas do teu df_limpo.
+    """
+    # Exemplo: Se o teu df_limpo tem Soma, Paridade, etc...
+    # Tens de extrair exatamente na mesma ordem!
+    features = [
+        sum(dezenas),                          # Soma
+        len([d for d in dezenas if d % 2 == 0]),# Pares
+        # ... adiciona aqui todas as outras colunas que tens no df_limpo ...
+    ]
+    # Retorna como um array para o scaler
+    return np.array(features).reshape(1, -1)
 
-
-    # --- Integração no teu pipeline ---
-analise = AnaliseEstatisticaMega(df_resultado)
-racional_estatistico = analise.encontrar_racional()
-print(racional_estatistico.head(10))
 
 
 
@@ -374,6 +372,12 @@ def filtrar_jogo(sugestao_ml, racional_df):
             
     return sorted(list(set(jogo_final)))
 
+
+analise = AnaliseEstatisticaMega(df_resultado)
+racional_estatistico = analise.encontrar_racional()
+print(racional_estatistico.head(10))
+
+
 jogo_filtrado = filtrar_jogo(otimizar_com_pulp(pred_final[0]), racional_estatistico)
 print(f"=== O JOGO RECOMENDADO PARA HOJE ===")
 print(f"Dezenas: {jogo_filtrado}")
@@ -382,3 +386,48 @@ print(f"Dezenas: {jogo_filtrado}")
 sugestao_bruta = otimizar_com_pulp(pred_final[0])
 jogo_filtrado_analise = filtrar_jogo(sugestao_bruta, racional_estatistico)
 print(f"\nSugestão enconders: {jogo_filtrado_analise}")
+
+
+
+scaler = MinMaxScaler()
+dados_norm = scaler.fit_transform(df_limpo.values)
+autoencoder = criar_autoencoder(dados_norm.shape[1])
+autoencoder.fit(dados_norm, dados_norm, epochs=100, verbose=0)
+
+# 3. Função de Validação do Jogo
+def validar_jogo_autoencoder(jogo_dezenas, df_limpo, threshold=0.05):
+    # 1. CRIAR O VETOR VAZIO: Um array com 1 linha e 124 colunas (tamanho do seu df)
+    features = np.zeros((1, df_limpo.shape[1]))
+    
+    # 2. PREENCHER AS COLUNAS (Exemplo de mapeamento)
+    # Aqui tu tens de garantir que as colunas que calculas 
+    # batem exatamente com as colunas do teu df_limpo.
+    
+    # Exemplo: se a coluna 0 for 'Soma'
+    features[0, 0] = sum(jogo_dezenas)
+    # Exemplo: se a coluna 1 for 'Pares'
+    features[0, 1] = len([d for d in jogo_dezenas if d % 2 == 0])
+    
+    # Se tiveres outras colunas, tens de continuar a preencher:
+    # features[0, 2] = ... (alguma outra estatística)
+    
+    # 3. AGORA O SCALER FUNCIONA: Ele recebe 124 colunas como esperado
+    features_norm = scaler.transform(features)
+    
+    # 4. Reconstrói e calcula o erro
+    reconstrucao = autoencoder.predict(features_norm, verbose=0)
+    erro = np.mean(np.power(features_norm - reconstrucao, 2))
+    
+    return erro < threshold, erro
+
+# 4. Uso final
+# O 'jogo_filtrado' é o teu jogo após passar pelos outros filtros
+ # Passa o DataFrame inteiro (df_limpo), sem o .columns
+is_valid, erro_valor = validar_jogo_autoencoder(jogo_filtrado, df_limpo)
+
+if is_valid:
+    print(f"✅ Jogo Aceite (Erro: {erro_valor:.4f})")
+else:
+    print(f"⚠️ Jogo Rejeitado (Erro: {erro_valor:.4f} > Threshold)")
+
+    # --- Integração no teu pipeline ---
