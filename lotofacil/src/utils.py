@@ -11,6 +11,10 @@ class LoteriaUtils:
         self.k = len(colunas_bolas) # k = 15
         self.total_possivel = TOTAL_POSSIVEL
         self.universo = 25 # Ajuste para Lotofácil
+        # Conjuntos estáticos para filtragem rápida
+        self.primos = {2, 3, 5, 7, 11, 13, 17, 19, 23}
+        self.moldura = {1, 2, 3, 4, 5, 6, 10, 11, 15, 16, 20, 21, 22, 23, 24, 25}
+
 
     def contar_pares(self, comb_list):
         return len([n for n in comb_list if int(n) % 2 == 0])
@@ -76,3 +80,20 @@ class LoteriaUtils:
                     max_streak = contador
                 contador = 0
         return max(max_streak, contador)
+    
+
+    def calcular_soma(self, comb_list):
+        return sum(map(int, comb_list))
+
+    def contar_primos(self, comb_list):
+        return len(set(map(int, comb_list)).intersection(self.primos))
+
+    def contar_moldura(self, comb_list):
+        return len(set(map(int, comb_list)).intersection(self.moldura))
+
+    def contar_repetidas_anterior(self, comb_list):
+        """Compara a combinação atual com o sorteio imediatamente anterior."""
+        if len(self.df) < 2: return 0
+        ultimo_sorteio = set(map(int, self.df.iloc[-1][self.colunas]))
+        return len(set(map(int, comb_list)).intersection(ultimo_sorteio))
+

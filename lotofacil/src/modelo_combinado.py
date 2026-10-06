@@ -6,6 +6,8 @@ from catboost import CatBoostRegressor
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from sklearn.model_selection import GridSearchCV
+from sklearn.feature_selection import SelectKBest, f_regression
+
 # === 1. CARREGAMENTO E PREPARAÇÃO ===
 df = pd.read_excel("diagnostico_lotofacil_filtrado.xlsx")
 df_limpo = df.select_dtypes(include=[np.number]).fillna(0)
@@ -16,9 +18,17 @@ historico_real = [set(row[colunas_dezenas].astype(int).tolist()) for _, row in d
 X_data = df_limpo.values
 y_data = df_limpo[colunas_dezenas].values
 
+
 # Treino CatBoost
 X = df_limpo.drop(columns=[df_limpo.columns[0]])
 y = df_limpo[colunas_dezenas].sum(axis=1)
+
+selector = SelectKBest(score_func=f_regression, k=5)
+X_selecionado = selector.fit_transform(X, y)
+
+# 2. Descobrir quais são as colunas selecionadas
+cols_selecionadas = X.columns[selector.get_support()]
+
 modelo_cb = CatBoostRegressor(iterations=100, verbose=0).fit(X, y)
 
 # Treino LSTM

@@ -56,10 +56,35 @@ df_resultado = df_resultado[df_resultado['Combinacao'].apply(lambda c: 7 <= util
 # 4. Exibição e Exportação
 colunas_fixas = [
     'Indice', 'Combinacao', 'Frequencia', 'Distancia', 
-    'quantidade_sequencia', 'Max_Repeticao_Max'
+    'quantidade_sequencia', 'Max_Repeticao_Max' , 'Soma', 'Primos', 'Moldura', 'Repetidas_Anterior', 'Similaridade_Media'
 ]
 cols_soma_dinamicas = [c for c in df_elite.columns if c.endswith('_Soma') and c != 'Max_Repeticao_Max']
 colunas_finais = colunas_fixas + cols_soma_dinamicas
+
+
+# 1. CRIAR AS COLUNAS NO DATAFRAME ANTES DOS FILTROS
+df_elite['Soma'] = df_elite['Combinacao'].apply(utils.calcular_soma)
+df_elite['Primos'] = df_elite['Combinacao'].apply(utils.contar_primos)
+df_elite['Moldura'] = df_elite['Combinacao'].apply(utils.contar_moldura)
+df_elite['Repetidas_Anterior'] = df_elite['Combinacao'].apply(utils.contar_repetidas_anterior)
+
+# 2. AGORA QUE AS COLUNAS EXISTEM, PODES FILTRAR O DF_RESULTADO
+df_resultado = df_elite[df_elite['Frequencia'] > 0].copy() # Usa .copy() para evitar avisos
+
+# Aplicar os filtros agora que as colunas existem
+df_resultado = df_resultado[
+    (df_resultado['Soma'].between(180, 220)) &
+    (df_resultado['Primos'].between(5, 6)) &
+    (df_resultado['Moldura'].between(9, 10)) &
+    (df_resultado['Repetidas_Anterior'].between(8, 10))
+]
+
+# 3. ATUALIZAR A LISTA DE COLUNAS FINAIS (incluindo as novas)
+colunas_novas = ['Soma', 'Primos', 'Moldura', 'Repetidas_Anterior']
+colunas_finais = colunas_fixas + cols_soma_dinamicas + colunas_novas
+
+# Agora a linha abaixo não dará erro
+print(df_resultado[colunas_finais].head(15).to_string(index=False))
 
 print("\n=== DIAGNÓSTICO LOTOFÁCIL FILTRADO ===")
 print(df_resultado[colunas_finais].head(15).to_string(index=False))
