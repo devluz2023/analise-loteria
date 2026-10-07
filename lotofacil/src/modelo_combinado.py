@@ -54,6 +54,11 @@ modelo_lstm_obj = treinar_modelo_lstm(X_lstm, y_lstm)
 
 # === 2. MODELOS ===
 def modelo_po():
+    while True:
+        dezenas = random.sample(range(1, 26), 15)
+        soma = sum(dezenas)
+        if 175 <= soma <= 215:
+            return set(dezenas)
     prob = pulp.LpProblem("PO", pulp.LpMinimize)
     x = pulp.LpVariable.dicts("d", range(1, 26), cat=pulp.LpBinary)
     prob += pulp.lpSum([x[i] for i in range(1, 26)]) == 15

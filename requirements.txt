@@ -1,1 +1,8 @@
-O que vc sente por Deus? O que vc pediria a Deus? O que vc agradece a Deus? Se Deus estivesse conversando contigo o que falaria a ele? O que é o amor para você? O que é um paraíso terrestre para você? Quem é Deus para você? O que vc deseja para a humanidade? 
+pandas>=1.3.0
+numpy>=1.20.0
+pulp>=2.5.0
+catboost>=1.0.0
+tensorflow>=2.5.0
+scikit-learn>=0.24.0
+openpyxl>=3.0.0
+
